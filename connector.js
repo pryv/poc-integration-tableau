@@ -14,25 +14,50 @@
   });
   
   //--- Pryv auth setup ---//
-  var authSettings = {
-    requestingAppId: 'tableau-demo',
-    requestedPermissions: [
-      {
-        streamId: '*',
-        level: 'read'
+  
+  var settings = getSettingsFromURL();
+  if (settings.username!=null && settings.auth!=null) {
+    // User already provided a Pryv access, Pryv auth not needed
+    var connection = new pryv.Connection(settings);
+    onSignedIn(connection);
+  }
+  else {
+    var authSettings = {
+      requestingAppId: 'tableau-demo',
+      requestedPermissions: [
+        {
+          streamId: '*',
+          level: 'read'
+        }
+      ],
+      returnURL: 'self#',
+      spanButtonID: 'pryv-button',
+      callbacks: {
+        initialization: function () {},
+        needSignin: onNeedSignin,
+        needValidation: null,
+        signedIn: onSignedIn,
+        refused: function (reason) {},
+        error: function (code, message) {}
       }
-    ],
-    returnURL: 'self#',
-    spanButtonID: 'pryv-button',
-    callbacks: {
-      initialization: function () {},
-      needSignin: onNeedSignin,
-      needValidation: null,
-      signedIn: onSignedIn,
-      refused: function (reason) {},
-      error: function (code, message) {}
-    }
-  };
+    };
+    // This call finalize the Pryv auth setup, login button will be ready
+    var domain = settings.domain || 'pryv.me';
+    var registerUrl = 'reg.' + domain;
+    pryv.Auth.config.registerURL = {host: registerUrl, 'ssl': true};
+    pryv.Auth.setup(authSettings);
+  }
+  
+  // Retrieves custom settings from URL querystring
+  // Allows to adapt Pryv domain or provide an existing Pryv access
+  function getSettingsFromURL() {
+    var settings = {
+      username : pryv.utility.urls.parseClientURL().parseQuery().username,
+      auth: pryv.utility.urls.parseClientURL().parseQuery().auth,
+      domain: pryv.utility.urls.parseClientURL().parseQuery().domain
+    };
+    return settings;
+  }
   
   // Returns the current Pryv connection and is able to either:
   // - Save auth/username from current Pryv connection as Tableau credentials
@@ -43,10 +68,8 @@
       if (! tableau.password) {
         // Saving auth/username as Tableau credentials
         tableau.password = pyConnection.auth;
-        tableau.username = pyConnection.username + '.' + pyConnection.domain  ;
-        if (typeof customDomain !== 'undefined' && customDomain)  {
-          tableau.username = pyConnection.username + '.' + customDomain ;
-        }
+        var domain = settings.domain || pyConnection.domain;
+        tableau.username = pyConnection.username + '.' + domain;
       }
     }
     // We do not have a Pryv connection but saved Tableau credentials
@@ -79,14 +102,6 @@
     getPYConnection();
     $('#submitButton').show();
   }
-  
-  // Allows to provide a custom register/domain (through index.html for example)
-  if (typeof customRegisterUrl !== 'undefined' && customRegisterUrl) {
-    pryv.Auth.config.registerURL = {host: customRegisterUrl, 'ssl': true};
-  }
-  
-  // This call finalize the Pryv auth setup, login button will be ready
-  pryv.Auth.setup(authSettings);
   
   //--- Connector setup ---//
   

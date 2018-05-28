@@ -5,47 +5,56 @@
   var myConnector = tableau.makeConnector();
   var pyConnection = null;
   
+  //--- Pryv auth setup ---//
+  
+  var settings = getSettingsFromURL();
+  var domain = settings.domain || 'pryv.me';
+  var registerUrl = 'reg.' + domain;
+  var authSettings = {
+    requestingAppId: 'tableau-demo',
+    requestedPermissions: [
+      {
+        streamId: '*',
+        level: 'read'
+      }
+    ],
+    returnURL: 'self#',
+    spanButtonID: 'pryv-button',
+    callbacks: {
+      initialization: function () {},
+      needSignin: onNeedSignin,
+      needValidation: null,
+      signedIn: onSignedIn,
+      refused: function (reason) {},
+      error: function (code, message) {}
+    }
+  };
+  
   // Called when web page first loads
   // and when the Pryv auth flow returns to the page
   $(document).ready(function() {
     if (! tableau.password) {
       $('#submitButton').hide();
+      $('#pryv-logout').hide();
     }
+    $('#pryv-logout').click(function() {
+      $('#pryv-logout').hide();
+      pryv.Auth.logout();
+      resetAuthState();
+    });
+    pryvAuthSetup();
   });
   
-  //--- Pryv auth setup ---//
-  
-  var settings = getSettingsFromURL();
-  if (settings.username!=null && settings.auth!=null) {
-    // User already provided a Pryv access, Pryv auth not needed
-    var connection = new pryv.Connection(settings);
-    onSignedIn(connection);
-  }
-  else {
-    var authSettings = {
-      requestingAppId: 'tableau-demo',
-      requestedPermissions: [
-        {
-          streamId: '*',
-          level: 'read'
-        }
-      ],
-      returnURL: 'self#',
-      spanButtonID: 'pryv-button',
-      callbacks: {
-        initialization: function () {},
-        needSignin: onNeedSignin,
-        needValidation: null,
-        signedIn: onSignedIn,
-        refused: function (reason) {},
-        error: function (code, message) {}
-      }
-    };
-    // This call finalize the Pryv auth setup, login button will be ready
-    var domain = settings.domain || 'pryv.me';
-    var registerUrl = 'reg.' + domain;
-    pryv.Auth.config.registerURL = {host: registerUrl, 'ssl': true};
-    pryv.Auth.setup(authSettings);
+  function pryvAuthSetup() {
+    if (settings.username!=null && settings.auth!=null) {
+      // User already provided a Pryv access, Pryv auth not needed
+      var connection = new pryv.Connection(settings);
+      onSignedIn(connection);
+    }
+    else {
+      pryv.Auth.config.registerURL = {host: registerUrl, 'ssl': true};
+      pryv.Auth.setup(authSettings);
+    }
   }
   
   // Retrieves custom settings from URL querystring
@@ -83,9 +92,7 @@
     return pyConnection;
   }
   
-  // Pryv callback triggered when the user need to sign in.
-  function onNeedSignin(popupUrl, pollUrl, pollRateMs) {
-    $('#submitButton').hide();
+  function resetAuthState() {
     if (tableau.phase == tableau.phaseEnum.interactivePhase || tableau.phase == tableau.phaseEnum.authPhase) {
       tableau.password = null;
       tableau.username = null;
@@ -93,14 +100,22 @@
       pyConnection = null;
     }
   }
+  
+  // Pryv callback triggered when the user need to sign in.
+  function onNeedSignin(popupUrl, pollUrl, pollRateMs) {
+    $('#submitButton').hide();
+    resetAuthState();
+  }
+  
   // Pryv callback triggered when the user is signed in.
   function onSignedIn(connection, langCode) {
-    tableau.log('Signed in!');
     pyConnection = connection;
     tableau.password = null;
     tableau.username = null;
     getPYConnection();
+    tableau.abortForAuth();
     $('#submitButton').show();
+    $('#pryv-logout').show();
   }
   
   //--- Connector setup ---//

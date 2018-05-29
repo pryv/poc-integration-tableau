@@ -85,6 +85,7 @@
         auth: tableau.password
       });
     }
+    updateUI();
     return pyConnection;
   }
   
@@ -111,8 +112,6 @@
   function saveCredentials(username, token) {
     tableau.username = username;
     tableau.password = token;
-    //$('#submitButton').toggle(hasAuth);
-    //$('#pryv-logout').toggle(hasAuth);
   }
   
   // Pryv callback triggered when the user need to sign in.
@@ -122,11 +121,10 @@
   
   // Pryv callback triggered when the user is signed in.
   function onSignedIn(connection, langCode) {
-    pyConnection = connection;
-    saveCredentials(null, null);
-    getPYConnection();
     tableau.abortForAuth();
-    updateUI();
+    saveCredentials(null, null);
+    pyConnection = connection;
+    getPYConnection();
   }
   
   //--- Connector setup ---//
@@ -143,12 +141,6 @@
       // the validity of an access token, that could be used here.
       // Then the WDC can call tableau.abortForAuth if that access token
       // is invalid.
-    }
-
-    // If we are not in the data gathering phase, we want to store the token
-    // This allows us to access the token in the data gathering phase
-    if (tableau.phase == tableau.phaseEnum.interactivePhase || tableau.phase == tableau.phaseEnum.authPhase) {
-      updateUI();
     }
     
     initCallback();

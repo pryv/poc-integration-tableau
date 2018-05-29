@@ -23,7 +23,6 @@
     callbacks: {
       initialization: function () {},
       needSignin: onNeedSignin,
-      needValidation: null,
       signedIn: onSignedIn,
       refused: function (reason) {},
       error: function (code, message) {}
@@ -33,12 +32,8 @@
   // Called when web page first loads
   // and when the Pryv auth flow returns to the page
   $(document).ready(function() {
-    if (! tableau.password) {
-      $('#submitButton').hide();
-      $('#pryv-logout').hide();
-    }
+    updateUI();
     $('#pryv-logout').click(function() {
-      $('#pryv-logout').hide();
       pryv.Auth.logout();
       resetAuthState();
     });
@@ -74,11 +69,12 @@
   function getPYConnection() {
     if (pyConnection) {
       // We have a Pryv connection but no saved Tableau credentials
-      if (! tableau.password) {
+      if (!tableau.password) {
         // Saving auth/username as Tableau credentials
-        tableau.password = pyConnection.auth;
+        var token = pyConnection.auth;
         var domain = settings.domain || pyConnection.domain;
-        tableau.username = pyConnection.username + '.' + domain;
+        var user = pyConnection.username + '.' + domain;
+        saveCredentials(user, token);
       }
     }
     // We do not have a Pryv connection but saved Tableau credentials
@@ -94,28 +90,43 @@
   
   function resetAuthState() {
     if (tableau.phase == tableau.phaseEnum.interactivePhase || tableau.phase == tableau.phaseEnum.authPhase) {
-      tableau.password = null;
-      tableau.username = null;
       tableau.abortForAuth();
+      saveCredentials(null, null);
       pyConnection = null;
+      updateUI();
     }
+  }
+  
+  function updateUI() {
+    if(tableau.password) {
+      $('#submitButton').show();
+      $('#pryv-logout').show();
+    } else {
+      $('#submitButton').hide();
+      $('#pryv-logout').hide();
+    }
+  }
+  
+  // Saving Pryv username and auth token as Tableau credentials
+  function saveCredentials(username, token) {
+    tableau.username = username;
+    tableau.password = token;
+    //$('#submitButton').toggle(hasAuth);
+    //$('#pryv-logout').toggle(hasAuth);
   }
   
   // Pryv callback triggered when the user need to sign in.
   function onNeedSignin(popupUrl, pollUrl, pollRateMs) {
-    $('#submitButton').hide();
     resetAuthState();
   }
   
   // Pryv callback triggered when the user is signed in.
   function onSignedIn(connection, langCode) {
     pyConnection = connection;
-    tableau.password = null;
-    tableau.username = null;
+    saveCredentials(null, null);
     getPYConnection();
     tableau.abortForAuth();
-    $('#submitButton').show();
-    $('#pryv-logout').show();
+    updateUI();
   }
   
   //--- Connector setup ---//
@@ -127,11 +138,6 @@
 
     getPYConnection();
 
-    // If we are in the auth phase we only want to show the UI needed for auth
-    if (tableau.phase == tableau.phaseEnum.authPhase) {
-      $("#submitButton").hide();
-    }
-
     if (tableau.phase == tableau.phaseEnum.gatherDataPhase) {
       // If API that WDC is using has an enpoint that checks
       // the validity of an access token, that could be used here.
@@ -142,11 +148,7 @@
     // If we are not in the data gathering phase, we want to store the token
     // This allows us to access the token in the data gathering phase
     if (tableau.phase == tableau.phaseEnum.interactivePhase || tableau.phase == tableau.phaseEnum.authPhase) {
-      if (tableau.password) {
-        $('#submitButton').show();
-      } else {
-        $('#submitButton').hide();
-      }
+      updateUI();
     }
     
     initCallback();
@@ -208,12 +210,12 @@
       alias: "type",
       dataType: tableau.dataTypeEnum.string
     }, {
-      id: "lat",
+      id: "latitude",
       alias: "latitude",
       columnRole: "dimension",
       dataType: tableau.dataTypeEnum.float
     }, {
-      id: "lon",
+      id: "longitude",
       alias: "longitude",
       columnRole: "dimension",
       dataType: tableau.dataTypeEnum.float
@@ -271,65 +273,34 @@
   
   // Collects location Events
   function getLocationEvents(table, doneCallback) {
-    var tableData = [];
-    getEvents(function (events) {
-      for (var i = 0; i < events.length; i++) {
-        var event = events[i];
-        if (event.type === 'position/wgs84') {
-          tableData.push({
-            id: event.id,
-            streamId: event.streamId,
-            type: event.type,
-            lat: event.content.latitude,
-            lon: event.content.longitude,
-            time: dateFormat(event.timeLT),
-            duration: event.duration
-          });
-        }
-      }
-      // Once we have all the data parsed, we send it to the Tableau table object
-      table.appendRows(tableData);
-      doneCallback();
-    });
+    var locationTypes = ['position/wgs84'];
+    var pryvFilter = new pryv.Filter({limit: 10000, types: locationTypes});
+    getEvents(pryvFilter, null, table, doneCallback);
   }
   
   // Collects numerical Events
   function getNumEvents(table, doneCallback) {
-    var tableData = [];
-    getEvents(function (events) {
-      for (var i = 0; i < events.length; i++) {
-        var event = events[i];
-        if (!isNaN(parseFloat(event.content)) && isFinite(event.content)) {
-          tableData.push({
-            id: event.id,
-            streamId: event.streamId,
-            type: event.type,
-            content: event.content,
-            time: dateFormat(event.timeLT),
-            duration: event.duration
-          });
-        }
-      }
-      // Once we have all the data parsed, we send it to the Tableau table object
-      table.appendRows(tableData);
-      doneCallback();
-    });
+    var pryvFilter = new pryv.Filter({limit: 10000});
+    var postFilter = function (event) {
+      return (!isNaN(parseFloat(event.content)) && isFinite(event.content));
+    };
+    getEvents(pryvFilter, postFilter, table, doneCallback);
   }
   
   // Retrieves Events from Pryv
-  var events;
-  function getEvents(doneCallback) {
-    if (events) return doneCallback(events);
-    var filter = new pryv.Filter({limit : 10000});
-    getPYConnection().events.get(filter, function (err, es) {
+  function getEvents(pryvFilter, postFilter, table, doneCallback) {
+    getPYConnection().events.get(pryvFilter, function (err, events) {
       if (err) {
-        tableau.abortWithError(err.toString());
+        return tableau.abortWithError(err.toString());
       }
-      if (! es) {
-        es = [];
+      if (events == null || events.length < 1) {
+        return doneCallback();
       }
-      var events = es;
-      return doneCallback(events);
+      if(postFilter) {
+        events = events.filter(postFilter);
+      }
+      appendEvents(table, events);
+      doneCallback();
     });
   }
   
@@ -337,31 +308,57 @@
   function getStreams(table, doneCallback) {
     getPYConnection().streams.get(null, function(err, streams) {
       if (err) {
-        tableau.abortWithError(err.toString());
+        return tableau.abortWithError(err.toString());
       }
-      if (! streams) {
-        return  doneCallback();
-      }
-      function addChilds(tableD, streamArray) {
-        for (var i = 0; i < streamArray.length; i++) {
-          var stream = streamArray[i];
-          tableD.push(
-            {
-              id: stream.id,
-              parentId: stream.parentId,
-              name: stream.name
-            }
-          );
-          addChilds(tableD, stream.children);
-        }
+      if (streams == null || streams.length < 1) {
+        return doneCallback();
       }
       
       var tableData = [];
-      addChilds(tableData, streams);
-      // Once we have all the data parsed, we send it to the Tableau table object
+      appendStreams(tableData, streams);
+      // Fill the Table rows with Pryv data
       table.appendRows(tableData);
       doneCallback();
     });
+  }
+    
+  // Append Pryv Streams to Tableau table
+  function appendStreams(tableD, streamsArray) {
+    for (var i = 0; i < streamsArray.length; i++) {
+      var stream = streamsArray[i];
+      tableD.push(
+        {
+          id: stream.id,
+          parentId: stream.parentId,
+          name: stream.name
+        }
+      );
+      appendStreams(tableD, stream.children);
+    }
+  }
+  
+  // Append Pryv Events to Tableau table
+  function appendEvents(table, eventsArray) {
+    var tableData = [];
+    for (var i = 0; i < eventsArray.length; i++) {
+      var event = eventsArray[i];
+      var eventData = {
+        id: event.id,
+        streamId: event.streamId,
+        type: event.type,
+        time: dateFormat(event.timeLT),
+        duration: event.duration
+      };
+      var content = event.content;
+      if(content != null && typeof content === 'object') {
+        $.extend(eventData, content);
+      } else {
+        eventData.content = content;
+      }
+      tableData.push(eventData);
+    }
+    // Fill the Table rows with Pryv data
+    table.appendRows(tableData);
   }
   
   //--- Helpers ---//

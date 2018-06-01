@@ -121,7 +121,6 @@
   
   // Pryv callback triggered when the user is signed in.
   function onSignedIn(connection, langCode) {
-    tableau.abortForAuth();
     saveCredentials(null, null);
     pyConnection = connection;
     getPYConnection();

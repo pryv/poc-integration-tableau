@@ -7,7 +7,7 @@ Custom Tableau's Webdataconnector (WDC) implementation for Pryv.
 2. A popup opens, paste the following URL and press "Enter" :
     > https://pryv.github.io/bridge-tableau/
 3. (Optional) You can adapt the previous URL in order to pass custom settings:
-    - If you already have a valid Pryv access (then you can skip step 4) :
+    - If you already have a valid Pryv access (it skips steps 4 and 5) :
         > https://pryv.github.io/bridge-tableau/?username=YOURUSER&auth=YOURTOKEN
     - If you want to change the Pryv domain (default is pryv.me) :
         > https://pryv.github.io/bridge-tableau/?domain=YOURDOMAIN

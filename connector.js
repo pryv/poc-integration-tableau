@@ -37,14 +37,22 @@
       pryv.Auth.logout();
       resetAuthState();
     });
-    pryvAuthSetup();
+    if (!tableau.password) {
+      pryvAuthSetup();
+    }
   });
   
   function pryvAuthSetup() {
     if (settings.username!=null && settings.auth!=null) {
       // User already provided a Pryv access, Pryv auth not needed
       var connection = new pryv.Connection(settings);
-      onSignedIn(connection);
+      // Make sure that the Pryv user/token pair is valid
+      connection.accessInfo(function (err,res) {
+        if (err) return tableau.abortWithError('Pryv user/token pair is invalid!');
+        pyConnection = connection;
+        // Automatically launch the data retrieval phase
+        tableau.submit();
+      });
     }
     else {
       pryv.Auth.config.registerURL = {host: registerUrl, 'ssl': true};
@@ -72,7 +80,6 @@
       if (!tableau.password) {
         // Saving auth/username as Tableau credentials
         var token = pyConnection.auth;
-        var domain = settings.domain || pyConnection.domain;
         var user = pyConnection.username + '.' + domain;
         saveCredentials(user, token);
       }

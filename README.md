@@ -1,6 +1,8 @@
 # bridge-tableau
 
-Custom Webdataconnector (WDC) implementation for Pryv and Tableau.
+Custom Web data connector ([WDC](http://tableau.github.io/webdataconnector/docs/)) implementation for Pryv and Tableau.
+
+The connector uses WDC Version 2.2 and targets Tableau 10.0 and later.
 
 _NOTE: Tableau refers to either [Tableau Desktop](https://www.tableau.com/products/desktop) or [Tableau Public](https://public.tableau.com/s/)._
 
@@ -27,3 +29,7 @@ _NOTE: Tableau refers to either [Tableau Desktop](https://www.tableau.com/produc
 10. Here is some additional links to get started with Tableau:
     - [Get Started with Tableau Desktop](https://onlinehelp.tableau.com/current/guides/get-started-tutorial/en-us/get-started-tutorial-home.html)
     - [Build a Basic View to Explore Your Data](https://onlinehelp.tableau.com/current/pro/desktop/en-us/getstarted_buildmanual_ex1basic.html)
+
+## License
+
+[Revised BSD license](https://github.com/pryv/documents/blob/master/license-bsd-revised.md)

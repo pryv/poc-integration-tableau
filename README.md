@@ -1,9 +1,11 @@
 # bridge-tableau
 
-Custom Webdataconnector (WDC) implementation for Pryv and [Tableau Desktop](https://www.tableau.com/products/desktop).
+Custom Webdataconnector (WDC) implementation for Pryv and Tableau.
+
+_NOTE: Tableau refers to either [Tableau Desktop](https://www.tableau.com/products/desktop) or [Tableau Public](https://public.tableau.com/s/)._
 
 ## Usage
-1. In Tableau Desktop, under Connect/To a Server, choose Web Data Connector.
+1. In Tableau, under Connect/To a Server, choose Web Data Connector.
 2. A popup opens, paste the following URL and press "Enter" :
     > https://pryv.github.io/bridge-tableau/
 3. (Optional) You can adapt the previous URL in order to pass custom settings:
@@ -22,6 +24,6 @@ Custom Webdataconnector (WDC) implementation for Pryv and [Tableau Desktop](http
 7. Double-click on any of these tables to add them in the schema view, you can also join multiple tables.
 8. Click on "Update now" to fill the tables with data.
 9. Click the sheet tab to begin your analysis in a new worksheet.
-10. Here is some additional links to get started with Tableau Desktop:
+10. Here is some additional links to get started with Tableau:
     - [Get Started with Tableau Desktop](https://onlinehelp.tableau.com/current/guides/get-started-tutorial/en-us/get-started-tutorial-home.html)
     - [Build a Basic View to Explore Your Data](https://onlinehelp.tableau.com/current/pro/desktop/en-us/getstarted_buildmanual_ex1basic.html)

@@ -1,9 +1,9 @@
 # bridge-tableau
 
-Custom Tableau's Webdataconnector (WDC) implementation for Pryv.
+Custom Webdataconnector (WDC) implementation for Pryv and [Tableau Desktop](https://www.tableau.com/products/desktop).
 
 ## Usage
-1. In Tableau, under Connect/To a Server, choose Web Data Connector.
+1. In Tableau Desktop, under Connect/To a Server, choose Web Data Connector.
 2. A popup opens, paste the following URL and press "Enter" :
     > https://pryv.github.io/bridge-tableau/
 3. (Optional) You can adapt the previous URL in order to pass custom settings:

@@ -164,6 +164,7 @@ It gives access to a pryv.io object that will be used for authentication/connect
 We also add a login button that will allow the user to authenticate with a Pryv.IO account, as well as a logout button :
 
 ```html
+<!-- It does not look like a button yet, onclick event will be affected to it later. -->
 <span id="pryv-button"></span>
 <button id="pryv-logout">Logout</button>
 ```

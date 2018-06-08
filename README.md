@@ -68,7 +68,7 @@ In **connector.js**, we first instantiate our Tableau connector :
 var myConnector = tableau.makeConnector();
 ```
 
-We then define the `myConnector.init` function, which will be called at the start of every Tableau phase (see Phases [1](#phase-1:-authentication) and [2](#phase-2:-data-gathering)). The main tasks of this function is to tell tableau that we want a custom authentication type  (see Phases [1](#phase-1:-authentication)) :
+We then define the `myConnector.init` function, which will be called at the start of every Tableau phase (see [Phase 1](#phase-1-authentication) and [Phase 2](#phase-2-data-gathering)). The main tasks of this function is to tell tableau that we want a custom authentication type  (see Phases [1](#phase-1-authentication)) :
 
 ```javascript
 tableau.authType = tableau.authTypeEnum.custom;
@@ -76,7 +76,7 @@ tableau.authType = tableau.authTypeEnum.custom;
 
 and to save Pryv's credentials in Tableau so that they persist between phases.
 
-Finally, we define the `myConnector.getData/getSchema` functions (see Phase [2](#phase-2:-data-gathering)) and conclude the connector initialization by registering it:
+Finally, we define the `myConnector.getData/getSchema` functions (see [Phase 2](#phase-2-data-gathering)) and conclude the connector initialization by registering it:
 
 ```javascript
 tableau.registerConnector(myConnector);

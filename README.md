@@ -68,7 +68,7 @@ In **connector.js**, we first instantiate our Tableau connector :
 var myConnector = tableau.makeConnector();
 ```
 
-We then define the `myConnector.init` function, which will be called at the start of every Tableau phase (see [Phase 1](#phase-1-authentication) and [Phase 2](#phase-2-data-gathering)). The main tasks of this function is to tell tableau that we want a custom authentication type  (see Phases [1](#phase-1-authentication)) :
+We then define the `myConnector.init` function, which will be called at the start of every Tableau phase (see [Phase 1](#phase-1-authentication) and [Phase 2](#phase-2-data-gathering)). The main tasks of this function is to tell tableau that we want a custom authentication type  (see [Phase 1](#phase-1-authentication)) :
 
 ```javascript
 tableau.authType = tableau.authTypeEnum.custom;

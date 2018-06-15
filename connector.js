@@ -46,7 +46,7 @@
       // Make sure that the Pryv user/token pair is valid
       connection.accessInfo(function (err,res) {
         if (err) return tableau.abortWithError('Pryv user/token pair is invalid!');
-        pyConnection = connection;
+        onSignedIn(connection);
         // Automatically launch the data retrieval phase
         tableau.submit();
       });

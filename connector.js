@@ -4,7 +4,6 @@
 
   var myConnector = tableau.makeConnector();
   var pyConnection = null;
-  var bypassAuth = false;
   
   //--- Pryv auth setup ---//
   
@@ -38,9 +37,6 @@
       pryv.Auth.logout();
       resetAuthState();
     });
-    if (!tableau.password) {
-      pryvAuthSetup();
-    }
   });
   
   function pryvAuthSetup() {
@@ -51,7 +47,8 @@
       connection.accessInfo(function (err,res) {
         if (err) return tableau.abortWithError('Pryv user/token pair is invalid!');
         pyConnection = connection;
-        bypassAuth = true;
+        // Automatically launch the data retrieval phase
+        tableau.submit();
       });
     }
     else {
@@ -143,9 +140,8 @@
     getPYConnection();
     
     if (tableau.phase == tableau.phaseEnum.interactivePhase || tableau.phase == tableau.phaseEnum.authPhase) {
-      if (bypassAuth) {
-        // Automatically launch the data retrieval phase
-        tableau.submit();
+      if (!tableau.password) {
+        pryvAuthSetup();
       }
     }
 

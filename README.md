@@ -10,9 +10,13 @@ _NOTE: Tableau refers either to [Tableau Desktop](https://www.tableau.com/produc
 
 1. In Tableau, under **Connect/To a Server**, choose **Web Data Connector**.
 
+   ![Connect](./screenshots/connect.png)
+
 2. A popup opens, paste the following URL and press _Enter_ :
 
    > https://pryv.github.io/bridge-tableau/
+
+   ![Login](./screenshots/login.png)
 
 3. _(Optional)_ You can adapt the previous URL in order to pass custom settings:
 
@@ -30,9 +34,11 @@ _NOTE: Tableau refers either to [Tableau Desktop](https://www.tableau.com/produc
 
 4. Use the **Sign in** button to login to your Pryv.IO account and authorize Tableau to access it.
 
-5. Click the **Get last 10'000 Data** to retrieve some of your Pryv.IO data in Tableau.
+5. Click on **Get last 10'000 Data** to retrieve some of your Pryv.IO data in Tableau.
 
 6. You should now have access to 3 tables in Tableau; **Streams**, **Location Events** and **Numerical Events**.
+
+   ![Full](./screenshots/full.png)
 
 7. Double-click on any of these tables to add them in the schema view, you can also join multiple tables.
 
@@ -42,8 +48,8 @@ _NOTE: Tableau refers either to [Tableau Desktop](https://www.tableau.com/produc
 
 10. Here is some additional links to get started with Tableau:
 
-    * [Get Started with Tableau Desktop](https://onlinehelp.tableau.com/current/guides/get-started-tutorial/en-us/get-started-tutorial-home.html)
-    * [Build a Basic View to Explore Your Data](https://onlinehelp.tableau.com/current/pro/desktop/en-us/getstarted_buildmanual_ex1basic.html)
+   * [Get Started with Tableau Desktop](https://onlinehelp.tableau.com/current/guides/get-started-tutorial/en-us/get-started-tutorial-home.html)
+   * [Build a Basic View to Explore Your Data](https://onlinehelp.tableau.com/current/pro/desktop/en-us/getstarted_buildmanual_ex1basic.html)
 
 ## Contribute
 

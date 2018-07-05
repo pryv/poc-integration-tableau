@@ -34,15 +34,22 @@
   $(document).ready(function() {
     updateUI();
     initTimeSelectors();
-    $('#pryv-logout').click(pryvLogout);
+    $('#pryv-logout').click(logout);
     $('#useSharingLink').click(loadPryvSharing);
     $("#submitButton").click(validateAndSubmit);
   });
   
-  function pryvLogout() {
-    pryv.Auth.logout();
+  function logout() {
+    // Logout Pryv account, not applicable for connection via sharing
+    if (settings.auth == null) {
+      pryv.Auth.logout();
+    }
     resetAuthState();
-    window.location = window.location.href.split(/[?#]/)[0];
+    var urlParameters = window.location.href.split(/[?#]/);
+    // If url contains parameters, clear them and reload the page
+    if (urlParameters.length > 1) {
+      window.location = urlParameters[0];
+    }
   }
   
   function initTimeSelectors() {
@@ -99,18 +106,19 @@
   }
   
   function pryvAuthSetup() {
+    // Using custom authentication with a Pryv sharing or access token
     if (settings.username!=null && settings.auth!=null) {
+      // No need to show authentication buttons in this case
+      $("#authDiv").hide();
       // User already provided a Pryv access, Pryv auth not needed
       var connection = new pryv.Connection(settings);
       // Make sure that the Pryv user/token pair is valid
       connection.accessInfo(function (err,res) {
         if (err) return tableau.abortWithError('Pryv user/token pair is invalid!');
         onSignedIn(connection);
-        // Automatically launch the data retrieval phase
-        tableau.connectionName = "Pryv WDC " + tableau.username;
-        tableau.submit();
       });
     }
+    // Using standard authentication with a Pryv account
     else {
       pryv.Auth.config.registerURL = {host: registerUrl, 'ssl': true};
       pryv.Auth.setup(authSettings);
@@ -205,9 +213,7 @@
     getPYConnection();
     
     if (tableau.phase == tableau.phaseEnum.interactivePhase || tableau.phase == tableau.phaseEnum.authPhase) {
-      if (!tableau.password) {
-        pryvAuthSetup();
-      }
+      pryvAuthSetup();
     }
 
     if (tableau.phase == tableau.phaseEnum.gatherDataPhase) {

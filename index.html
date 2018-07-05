@@ -31,7 +31,7 @@
       color: white;
       border-radius: 4px;
       margin: 0 auto;
-      font-size: 1 em;
+      font-size: 13px;
     }
     button:hover{
       cursor: pointer;
@@ -40,9 +40,15 @@
 </head>
 <body>
 <h1>Tableau Web Data Connector for Pryv </h1>
+Login with a Pryv account : 
 <span id="pryv-button"></span>
 <button id="pryv-logout">Logout</button>
 <br><br>
+<div id="sharingDiv">
+  Or use a sharing link :
+  <input type="text" id="sharingLink"></input> 
+  <button id="useSharingLink">Use sharing</button>
+</div>
 <button id="submitButton" onclick="tableau.submit();">Get last 10'000 Data</button>
 </body>
 </html>

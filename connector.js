@@ -36,6 +36,23 @@
     $('#pryv-logout').click(function() {
       pryv.Auth.logout();
       resetAuthState();
+      window.location = window.location.href.split(/[?#]/)[0];
+    });
+    $('#useSharingLink').click(function() {
+      var sharingLink = $('#sharingLink').val();
+      if (!sharingLink) {
+        return tableau.abortWithError('Please provide a sharing link.');
+      }
+      var settings = getSettingsFromURL(sharingLink);
+      var domain = settings.domain;
+      var username = settings.username;
+      var auth = settings.auth;
+      if (!domain || !username || !auth) {
+        return tableau.abortWithError('The sharing link is invalid.');
+      }
+      var sharingUrl = window.location.href.split('?')[0];
+      sharingUrl += '?domain=' + domain + '&username=' + username + '&auth=' + auth;
+      window.location = sharingUrl;
     });
   });
   
@@ -59,11 +76,14 @@
   
   // Retrieves custom settings from URL querystring
   // Allows to adapt Pryv domain or provide an existing Pryv access
-  function getSettingsFromURL() {
+  // Url parameter is optional, default is `document.location` if available
+  function getSettingsFromURL(url) {
+    var urlInfo = pryv.utility.urls.parseClientURL(url);
+    var queryString = urlInfo.parseQuery();
     var settings = {
-      username : pryv.utility.urls.parseClientURL().parseQuery().username,
-      auth: pryv.utility.urls.parseClientURL().parseQuery().auth,
-      domain: pryv.utility.urls.parseClientURL().parseQuery().domain
+      username : url ? urlInfo.username : queryString.username,
+      domain: url ? urlInfo.domain: queryString.domain,
+      auth: url ? urlInfo.parseSharingTokens()[0]: queryString.auth
     };
     return settings;
   }
@@ -98,7 +118,6 @@
       tableau.abortForAuth();
       saveCredentials(null, null);
       pyConnection = null;
-      updateUI();
     }
   }
   
@@ -106,9 +125,11 @@
     if(tableau.password) {
       $('#submitButton').show();
       $('#pryv-logout').show();
+      $('#sharingDiv').hide();
     } else {
       $('#submitButton').hide();
       $('#pryv-logout').hide();
+      $('#sharingDiv').show();
     }
   }
   
@@ -121,6 +142,7 @@
   // Pryv callback triggered when the user need to sign in.
   function onNeedSignin(popupUrl, pollUrl, pollRateMs) {
     resetAuthState();
+    updateUI();
   }
   
   // Pryv callback triggered when the user is signed in.

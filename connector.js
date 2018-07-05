@@ -28,33 +28,75 @@
       error: function (code, message) {}
     }
   };
-  
+    
   // Called when web page first loads
   // and when the Pryv auth flow returns to the page
   $(document).ready(function() {
     updateUI();
-    $('#pryv-logout').click(function() {
-      pryv.Auth.logout();
-      resetAuthState();
-      window.location = window.location.href.split(/[?#]/)[0];
-    });
-    $('#useSharingLink').click(function() {
-      var sharingLink = $('#sharingLink').val();
-      if (!sharingLink) {
-        return tableau.abortWithError('Please provide a sharing link.');
-      }
-      var settings = getSettingsFromURL(sharingLink);
-      var domain = settings.domain;
-      var username = settings.username;
-      var auth = settings.auth;
-      if (!domain || !username || !auth) {
-        return tableau.abortWithError('The sharing link is invalid.');
-      }
-      var sharingUrl = window.location.href.split('?')[0];
-      sharingUrl += '?domain=' + domain + '&username=' + username + '&auth=' + auth;
-      window.location = sharingUrl;
-    });
+    initTimeSelectors();
+    $('#pryv-logout').click(pryvLogout);
+    $('#useSharingLink').click(loadPryvSharing);
+    $("#submitButton").click(validateAndSubmit);
   });
+  
+  function pryvLogout() {
+    pryv.Auth.logout();
+    resetAuthState();
+    window.location = window.location.href.split(/[?#]/)[0];
+  }
+  
+  function initTimeSelectors() {
+    var currentDate = new Date();
+    var currentYear = currentDate.getFullYear();
+    $("#timeSelectorFrom").combodate({
+      value: new Date(0),
+      smartDays: true,
+      maxYear: currentYear
+    });
+    $("#timeSelectorTo").combodate({
+      value: currentDate,
+      smartDays: true,
+      maxYear: currentYear
+    });
+  }
+  
+  function loadPryvSharing() {
+    var sharingLink = $('#sharingLink').val();
+    if (!sharingLink) {
+      return tableau.abortWithError('Please provide a sharing link.');
+    }
+    var settings = getSettingsFromURL(sharingLink);
+    var domain = settings.domain;
+    var username = settings.username;
+    var auth = settings.auth;
+    if (!domain || !username || !auth) {
+      return tableau.abortWithError('The sharing link is invalid.');
+    }
+    var sharingUrl = window.location.href.split('?')[0];
+    sharingUrl += '?domain=' + domain + '&username=' + username + '&auth=' + auth;
+    window.location = sharingUrl;
+  }
+  
+  // Validate filtering parameters and save them for next phase (data gathering)
+  // and submit to Tableau
+  function validateAndSubmit() {
+    var tempLimit = parseInt($("#limitSelector").val());
+    var tempFrom = parseInt($("#timeSelectorFrom").combodate('getValue', 'X'));
+    var tempTo = parseInt($("#timeSelectorTo").combodate('getValue', 'X'));
+    if (isNaN(tempLimit) || tempLimit <= 0 || tempLimit >= 100000) {
+      return tableau.abortWithError('Invalid limit.');
+    }
+    if (isNaN(tempFrom) || isNaN(tempTo) || tempTo - tempFrom < 0) {
+      return tableau.abortWithError('Invalid from/to.');
+    }
+    tableau.connectionData = JSON.stringify({
+      limit: tempLimit,
+      from: tempFrom,
+      to: tempTo
+    });
+    tableau.connectionName = "Pryv WDC " + tableau.username;
+    tableau.submit();
+  }
   
   function pryvAuthSetup() {
     if (settings.username!=null && settings.auth!=null) {
@@ -65,6 +107,7 @@
         if (err) return tableau.abortWithError('Pryv user/token pair is invalid!');
         onSignedIn(connection);
         // Automatically launch the data retrieval phase
+        tableau.connectionName = "Pryv WDC " + tableau.username;
         tableau.submit();
       });
     }
@@ -123,11 +166,11 @@
   
   function updateUI() {
     if(tableau.password) {
-      $('#submitButton').show();
+      $('#submitDiv').show();
       $('#pryv-logout').show();
       $('#sharingDiv').hide();
     } else {
-      $('#submitButton').hide();
+      $('#submitDiv').hide();
       $('#pryv-logout').hide();
       $('#sharingDiv').show();
     }
@@ -297,24 +340,37 @@
   // Collects location Events
   function getLocationEvents(table, doneCallback) {
     var locationTypes = ['position/wgs84'];
-    var pryvFilter = new pryv.Filter({limit: 10000, types: locationTypes});
+    var pryvFilter = getPryvFilter(locationTypes);
     getEvents(pryvFilter, null, table, doneCallback);
   }
   
   // Collects numerical Events
   function getNumEvents(table, doneCallback) {
-    var pryvFilter = new pryv.Filter({limit: 10000});
+    var pryvFilter = getPryvFilter();
     var postFilter = function (event) {
       return (!isNaN(parseFloat(event.content)) && isFinite(event.content));
     };
     getEvents(pryvFilter, postFilter, table, doneCallback);
   }
   
+  function getPryvFilter(types) {
+    var options = JSON.parse(tableau.connectionData);
+    var filtering = {
+      limit: options.limit,
+      fromTime: options.from,
+      toTime: options.to,
+    };
+    if (types) {
+      filtering.types = types;
+    }
+    return new pryv.Filter(filtering);
+  }
+  
   // Retrieves Events from Pryv
   function getEvents(pryvFilter, postFilter, table, doneCallback) {
     getPYConnection().events.get(pryvFilter, function (err, events) {
       if (err) {
-        return tableau.abortWithError(err.toString());
+        return tableau.abortWithError(JSON.stringify(err));
       }
       if (events == null || events.length < 1) {
         return doneCallback();
@@ -331,7 +387,7 @@
   function getStreams(table, doneCallback) {
     getPYConnection().streams.get(null, function(err, streams) {
       if (err) {
-        return tableau.abortWithError(err.toString());
+        return tableau.abortWithError(JSON.stringify(err));
       }
       if (streams == null || streams.length < 1) {
         return doneCallback();

@@ -28,29 +28,106 @@
       error: function (code, message) {}
     }
   };
-  
+    
   // Called when web page first loads
   // and when the Pryv auth flow returns to the page
   $(document).ready(function() {
     updateUI();
-    $('#pryv-logout').click(function() {
-      pryv.Auth.logout();
-      resetAuthState();
-    });
+    initTimeSelectors();
+    $('#pryv-logout').click(logout);
+    $('#useSharingLink').click(loadPryvSharing);
+    $("#submitButton").click(validateAndSubmit);
   });
   
+  function logout() {
+    // Logout Pryv account, not applicable for connection via sharing
+    if (settings.auth == null) {
+      pryv.Auth.logout();
+    }
+    resetAuthState();
+    var urlParameters = window.location.href.split(/[?#]/);
+    // If url contains parameters, clear them and reload the page
+    if (urlParameters.length > 1) {
+      window.location = urlParameters[0];
+    }
+  }
+  
+  function initTimeSelectors() {
+    var currentDate = new Date();
+    var currentYear = currentDate.getFullYear();
+    $("#timeSelectorFrom").combodate({
+      value: new Date(0),
+      smartDays: true,
+      maxYear: currentYear
+    });
+<<<<<<< HEAD
+  });
+=======
+    $("#timeSelectorTo").combodate({
+      value: currentDate,
+      smartDays: true,
+      maxYear: currentYear
+    });
+  }
+  
+  function loadPryvSharing() {
+    var sharingLink = $('#sharingLink').val();
+    if (!sharingLink) {
+      return tableau.abortWithError('Please provide a sharing link.');
+    }
+    var settings = getSettingsFromURL(sharingLink);
+    var domain = settings.domain;
+    var username = settings.username;
+    var auth = settings.auth;
+    if (!domain || !username || !auth) {
+      return tableau.abortWithError('The sharing link is invalid.');
+    }
+    var sharingUrl = window.location.href.split('?')[0];
+    sharingUrl += '?domain=' + domain + '&username=' + username + '&auth=' + auth;
+    window.location = sharingUrl;
+  }
+  
+  // Validate filtering parameters and save them for next phase (data gathering)
+  // and submit to Tableau
+  function validateAndSubmit() {
+    var tempLimit = parseInt($("#limitSelector").val());
+    var tempFrom = parseInt($("#timeSelectorFrom").combodate('getValue', 'X'));
+    var tempTo = parseInt($("#timeSelectorTo").combodate('getValue', 'X'));
+    if (isNaN(tempLimit) || tempLimit <= 0 || tempLimit >= 100000) {
+      return tableau.abortWithError('Invalid limit.');
+    }
+    if (isNaN(tempFrom) || isNaN(tempTo) || tempTo - tempFrom < 0) {
+      return tableau.abortWithError('Invalid from/to.');
+    }
+    tableau.connectionData = JSON.stringify({
+      limit: tempLimit,
+      from: tempFrom,
+      to: tempTo
+    });
+    tableau.connectionName = "Pryv WDC " + tableau.username;
+    tableau.submit();
+  }
+>>>>>>> master
+  
   function pryvAuthSetup() {
+    // Using custom authentication with a Pryv sharing or access token
     if (settings.username!=null && settings.auth!=null) {
+      // No need to show authentication buttons in this case
+      $("#authDiv").hide();
       // User already provided a Pryv access, Pryv auth not needed
       var connection = new pryv.Connection(settings);
       // Make sure that the Pryv user/token pair is valid
       connection.accessInfo(function (err,res) {
         if (err) return tableau.abortWithError('Pryv user/token pair is invalid!');
         onSignedIn(connection);
+<<<<<<< HEAD
         // Automatically launch the data retrieval phase
         tableau.submit();
+=======
+>>>>>>> master
       });
     }
+    // Using standard authentication with a Pryv account
     else {
       pryv.Auth.config.registerURL = {host: registerUrl, 'ssl': true};
       pryv.Auth.setup(authSettings);
@@ -59,11 +136,14 @@
   
   // Retrieves custom settings from URL querystring
   // Allows to adapt Pryv domain or provide an existing Pryv access
-  function getSettingsFromURL() {
+  // Url parameter is optional, default is `document.location` if available
+  function getSettingsFromURL(url) {
+    var urlInfo = pryv.utility.urls.parseClientURL(url);
+    var queryString = urlInfo.parseQuery();
     var settings = {
-      username : pryv.utility.urls.parseClientURL().parseQuery().username,
-      auth: pryv.utility.urls.parseClientURL().parseQuery().auth,
-      domain: pryv.utility.urls.parseClientURL().parseQuery().domain
+      username : url ? urlInfo.username : queryString.username,
+      domain: url ? urlInfo.domain: queryString.domain,
+      auth: url ? urlInfo.parseSharingTokens()[0]: queryString.auth
     };
     return settings;
   }
@@ -98,17 +178,18 @@
       tableau.abortForAuth();
       saveCredentials(null, null);
       pyConnection = null;
-      updateUI();
     }
   }
   
   function updateUI() {
     if(tableau.password) {
-      $('#submitButton').show();
+      $('#submitDiv').show();
       $('#pryv-logout').show();
+      $('#sharingDiv').hide();
     } else {
-      $('#submitButton').hide();
+      $('#submitDiv').hide();
       $('#pryv-logout').hide();
+      $('#sharingDiv').show();
     }
   }
   
@@ -121,6 +202,7 @@
   // Pryv callback triggered when the user need to sign in.
   function onNeedSignin(popupUrl, pollUrl, pollRateMs) {
     resetAuthState();
+    updateUI();
   }
   
   // Pryv callback triggered when the user is signed in.
@@ -140,9 +222,13 @@
     getPYConnection();
     
     if (tableau.phase == tableau.phaseEnum.interactivePhase || tableau.phase == tableau.phaseEnum.authPhase) {
+<<<<<<< HEAD
       if (!tableau.password) {
         pryvAuthSetup();
       }
+=======
+      pryvAuthSetup();
+>>>>>>> master
     }
 
     if (tableau.phase == tableau.phaseEnum.gatherDataPhase) {
@@ -275,24 +361,37 @@
   // Collects location Events
   function getLocationEvents(table, doneCallback) {
     var locationTypes = ['position/wgs84'];
-    var pryvFilter = new pryv.Filter({limit: 10000, types: locationTypes});
+    var pryvFilter = getPryvFilter(locationTypes);
     getEvents(pryvFilter, null, table, doneCallback);
   }
   
   // Collects numerical Events
   function getNumEvents(table, doneCallback) {
-    var pryvFilter = new pryv.Filter({limit: 10000});
+    var pryvFilter = getPryvFilter();
     var postFilter = function (event) {
       return (!isNaN(parseFloat(event.content)) && isFinite(event.content));
     };
     getEvents(pryvFilter, postFilter, table, doneCallback);
   }
   
+  function getPryvFilter(types) {
+    var options = JSON.parse(tableau.connectionData);
+    var filtering = {
+      limit: options.limit,
+      fromTime: options.from,
+      toTime: options.to,
+    };
+    if (types) {
+      filtering.types = types;
+    }
+    return new pryv.Filter(filtering);
+  }
+  
   // Retrieves Events from Pryv
   function getEvents(pryvFilter, postFilter, table, doneCallback) {
     getPYConnection().events.get(pryvFilter, function (err, events) {
       if (err) {
-        return tableau.abortWithError(err.toString());
+        return tableau.abortWithError(JSON.stringify(err));
       }
       if (events == null || events.length < 1) {
         return doneCallback();
@@ -309,7 +408,7 @@
   function getStreams(table, doneCallback) {
     getPYConnection().streams.get(null, function(err, streams) {
       if (err) {
-        return tableau.abortWithError(err.toString());
+        return tableau.abortWithError(JSON.stringify(err));
       }
       if (streams == null || streams.length < 1) {
         return doneCallback();

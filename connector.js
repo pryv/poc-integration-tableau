@@ -60,9 +60,6 @@
       smartDays: true,
       maxYear: currentYear
     });
-<<<<<<< HEAD
-  });
-=======
     $("#timeSelectorTo").combodate({
       value: currentDate,
       smartDays: true,
@@ -107,7 +104,6 @@
     tableau.connectionName = "Pryv WDC " + tableau.username;
     tableau.submit();
   }
->>>>>>> master
   
   function pryvAuthSetup() {
     // Using custom authentication with a Pryv sharing or access token
@@ -120,11 +116,6 @@
       connection.accessInfo(function (err,res) {
         if (err) return tableau.abortWithError('Pryv user/token pair is invalid!');
         onSignedIn(connection);
-<<<<<<< HEAD
-        // Automatically launch the data retrieval phase
-        tableau.submit();
-=======
->>>>>>> master
       });
     }
     // Using standard authentication with a Pryv account
@@ -222,13 +213,7 @@
     getPYConnection();
     
     if (tableau.phase == tableau.phaseEnum.interactivePhase || tableau.phase == tableau.phaseEnum.authPhase) {
-<<<<<<< HEAD
-      if (!tableau.password) {
-        pryvAuthSetup();
-      }
-=======
       pryvAuthSetup();
->>>>>>> master
     }
 
     if (tableau.phase == tableau.phaseEnum.gatherDataPhase) {

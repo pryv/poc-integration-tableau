@@ -39,7 +39,9 @@
     }
     table {
       text-align: left;
-      center;
+    }
+    input[type="range"] {
+      width:270px;
     }
   </style>
 </head>
@@ -60,16 +62,19 @@
 <div id="submitDiv">
   <table align="center">
     <tr>
+      <td>Measurements limit : </td>
+      <td>
+        <input id="limitSelector" type="range" max="10000" step="50" min="50" value="1000"/>
+        <input id="limit" type="text" size="5" value="1000" disabled/>
+      </td>
+    </tr>
+    <tr>
       <td>From time : </td>
       <td><input id="timeSelectorFrom" type="text"></td>
     </tr>
     <tr>
       <td>To time : </td>
       <td><input id="timeSelectorTo" type="text"></td>
-    </tr>
-    <tr>
-      <td>Measurements limit : </td>
-      <td><input id="limitSelector" type="number" maxlength="5" max="99999" min="1" size="5" value="1000"/></td>
     </tr>
   </table> 
   <br><br>

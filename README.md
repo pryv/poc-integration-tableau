@@ -12,11 +12,11 @@ _NOTE: Tableau refers either to [Tableau Desktop](https://www.tableau.com/produc
 
    ![Connect](./screenshots/connect.png)
 
-2. A popup opens, paste the following URL and press _Enter_ :
+2. A new window opens, paste the following URL and press _Enter_ :
 
    > https://pryv.github.io/bridge-tableau/
-
-   ![Login](./screenshots/login.png)
+   
+   ![Login](./screenshots/connector.png)
 
 3. _(Optional)_ You can adapt the previous URL in order to pass custom settings:
 
@@ -32,21 +32,27 @@ _NOTE: Tableau refers either to [Tableau Desktop](https://www.tableau.com/produc
 
      > https://pryv.github.io/bridge-tableau/?username=YOURUSER&auth=YOURTOKEN&domain=YOURDOMAIN
 
-4. Use the **Sign in** button to login to your Pryv.IO account and authorize Tableau to access it.
+4. Connect a Pryv.io account, you have two possibilities here :
 
-5. Click on **Get last 10'000 Data** to retrieve some of your Pryv.IO data in Tableau.
+  * Use the **Sign in** button to login to your Pryv.IO account and authorize Tableau to access it.
+  
+  * Use a Pryv.io sharing by pasting the sharing url in the appropriate input field and click on **Use sharing**.
+  
+  ![Login](./screenshots/login.png)
 
-6. You should now have access to 3 tables in Tableau; **Streams**, **Location Events** and **Numerical Events**.
+5. Some selectors (time range, measurements limit) appear, you can use them to filter the data to be retrieved from Pryv.IO, then click on **Get Data**.
+
+6. You should now have access to 3 tables in Tableau; **Streams**, **Location Events** and **Numerical Events**. Double-click on any of these tables to add them in the schema view, you can also join multiple tables.
 
    ![Full](./screenshots/full.png)
 
-7. Double-click on any of these tables to add them in the schema view, you can also join multiple tables.
+7. Click on **Update now** to fill the tables with data.
 
-8. Click on **Update now** to fill the tables with data.
+8. Click the **Sheet** tab to begin your analysis in a new worksheet.
 
-9. Click the **Sheet** tab to begin your analysis in a new worksheet.
+You are ready to analyse your Pryv.IO data in Tableau!
 
-10. Here is some additional links to get started with Tableau:
+Here is some additional links to get started with Tableau:
 
    * [Get Started with Tableau Desktop](https://onlinehelp.tableau.com/current/guides/get-started-tutorial/en-us/get-started-tutorial-home.html)
    * [Build a Basic View to Explore Your Data](https://onlinehelp.tableau.com/current/pro/desktop/en-us/getstarted_buildmanual_ex1basic.html)
@@ -106,7 +112,7 @@ Once authenticated, we show a submit button (declared in **index.html**) that wi
 
 #### Phase 2: Data gathering
 
-In order to complete the configuration of the Tableau connector logic, we have to provide two additional functions that will be called to gather and structure the data, once authentication is sucessful.
+In order to complete the configuration of the Tableau connector logic, we have to provide two additional functions that will be called to gather and structure the data, once authentication is successful.
 
 ##### Schema definition
 
@@ -192,7 +198,7 @@ Finally, the utility function `getSettingsFromURL` loads custom parameters that 
 
 As soon as the Tableau connector opens, it will start the Pryv.IO authentication flow by calling `pryvAuthSetup`. Two situations can be observed:
 
-* If the user provided an existing Pryv.IO access through the connector URL (see [Usage](#usage), step 3), it will bypass Pryv authentication and directly jumps to data gathering by calling `tableau.submit`.
+* If the user provided an existing Pryv.IO access through the connector URL or use a sharing link (see [Usage](#usage), step 3), it will bypass Pryv login.
 * Otherwise, it will call `pryv.Auth.setup(authSettings)`, which will activate the Pryv.IO login button and start the authentication flow using the settings prepared previously.
 
 ##### Phase 1: needSignin
@@ -221,7 +227,7 @@ The `getStreams` function uses the current Pryv connection to perform a GET call
 
 ##### Get Location Events
 
-The `getLocationEvents` function relies on the `getEvents` function, which works similarly to `getStreams`, but targets the Events route and provides an additional Pryv.IO filter to limit the results to the last 10'000 Events of type location (_'position/wgs84'_).
+The `getLocationEvents` function relies on the `getEvents` function, which works similarly to `getStreams`, but targets the Events route and provides an additional Pryv.IO filter in order to only retrieve Events of type location (_'position/wgs84'_). This filter can be further configured by the user, as explained in [Usage](#usage) step 5.
 
 Then, as for Streams, we parse the resulting Events and append them as rows of the corresponding table (`appendEvents` => `table.appendRows`).
 

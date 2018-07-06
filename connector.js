@@ -33,7 +33,7 @@
   // and when the Pryv auth flow returns to the page
   $(document).ready(function() {
     updateUI();
-    initTimeSelectors();
+    initSelectors();
     $('#pryv-logout').click(logout);
     $('#useSharingLink').click(loadPryvSharing);
     $("#submitButton").click(validateAndSubmit);
@@ -52,7 +52,7 @@
     }
   }
   
-  function initTimeSelectors() {
+  function initSelectors() {
     var currentDate = new Date();
     var currentYear = currentDate.getFullYear();
     $("#timeSelectorFrom").combodate({
@@ -65,6 +65,9 @@
       smartDays: true,
       maxYear: currentYear
     });
+    $("#limitSelector")[0].oninput = function() {
+      $("#limit").val(this.value);
+    }
   }
   
   function loadPryvSharing() {
@@ -90,7 +93,7 @@
     var tempLimit = parseInt($("#limitSelector").val());
     var tempFrom = parseInt($("#timeSelectorFrom").combodate('getValue', 'X'));
     var tempTo = parseInt($("#timeSelectorTo").combodate('getValue', 'X'));
-    if (isNaN(tempLimit) || tempLimit <= 0 || tempLimit >= 100000) {
+    if (isNaN(tempLimit)) {
       return tableau.abortWithError('Invalid limit.');
     }
     if (isNaN(tempFrom) || isNaN(tempTo) || tempTo - tempFrom < 0) {

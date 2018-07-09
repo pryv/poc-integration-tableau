@@ -65,9 +65,9 @@
       smartDays: true,
       maxYear: currentYear
     });
-    $("#limitSelector")[0].oninput = function() {
-      $("#limit").val(this.value);
-    }
+    $("#noLimit").change(function() {
+      $("#limitSelector").prop('disabled', this.checked);
+    });
   }
   
   function loadPryvSharing() {
@@ -80,7 +80,7 @@
     var username = settings.username;
     var auth = settings.auth;
     if (!domain || !username || !auth) {
-      return tableau.abortWithError('The sharing link is invalid.');
+      return tableau.abortWithError('This sharing link is invalid.');
     }
     var sharingUrl = window.location.href.split('?')[0];
     sharingUrl += '?domain=' + domain + '&username=' + username + '&auth=' + auth;
@@ -90,20 +90,23 @@
   // Validate filtering parameters and save them for next phase (data gathering)
   // and submit to Tableau
   function validateAndSubmit() {
-    var tempLimit = parseInt($("#limitSelector").val());
     var tempFrom = parseInt($("#timeSelectorFrom").combodate('getValue', 'X'));
     var tempTo = parseInt($("#timeSelectorTo").combodate('getValue', 'X'));
-    if (isNaN(tempLimit)) {
-      return tableau.abortWithError('Invalid limit.');
-    }
     if (isNaN(tempFrom) || isNaN(tempTo) || tempTo - tempFrom < 0) {
-      return tableau.abortWithError('Invalid from/to.');
+      return tableau.abortWithError('Invalid from/to, please make sure "from" is earlier than "to".');
     }
-    tableau.connectionData = JSON.stringify({
-      limit: tempLimit,
-      from: tempFrom,
-      to: tempTo
-    });
+    var options = {
+      fromTime: tempFrom,
+      toTime: tempTo
+    };
+    if ($("#noLimit").is(':checked') === false) {
+      var tempLimit = parseInt($("#limitSelector").val());
+      if (isNaN(tempLimit) || tempLimit < 1) {
+        return tableau.abortWithError('Invalid limit, please provide a number greater than 0.');
+      }
+      options.limit = tempLimit;
+    }
+    tableau.connectionData = JSON.stringify(options);
     tableau.connectionName = "Pryv WDC " + tableau.username;
     tableau.submit();
   }
@@ -363,12 +366,7 @@
   }
   
   function getPryvFilter(types) {
-    var options = JSON.parse(tableau.connectionData);
-    var filtering = {
-      limit: options.limit,
-      fromTime: options.from,
-      toTime: options.to,
-    };
+    var filtering = JSON.parse(tableau.connectionData);
     if (types) {
       filtering.types = types;
     }

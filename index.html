@@ -40,8 +40,8 @@
     table {
       text-align: left;
     }
-    input[type="range"] {
-      width:270px;
+    #limitSelector {
+      margin-right: 30px;
     }
   </style>
 </head>
@@ -61,14 +61,6 @@
 </div>
 <div id="submitDiv">
   <table align="center">
-    <tr>
-      <td>Measurements limit : </td>
-      <td>
-        <input id="limitSelector" type="range" max="10000" step="50" min="50" value="1000"/>
-        <input id="limit" type="text" size="5" value="1000" disabled/>
-      </td>
-    </tr>
-    <tr>
       <td>From time : </td>
       <td><input id="timeSelectorFrom" type="text"></td>
     </tr>
@@ -76,6 +68,14 @@
       <td>To time : </td>
       <td><input id="timeSelectorTo" type="text"></td>
     </tr>
+    <tr>
+      <td>Measures count : </td>
+      <td>
+        <input id="limitSelector" type="number" size="10" value="1000"/>
+        All <input type="checkbox" id="noLimit">
+      </td>
+    </tr>
+    <tr>
   </table> 
   <br><br>
   <button id="submitButton">Get Data</button>

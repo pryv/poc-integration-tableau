@@ -148,7 +148,7 @@
   // Returns the current Pryv connection and is able to either:
   // - Save auth/username from current Pryv connection as Tableau credentials
   // - Or open a new Pryv connection from saved Tableau credentials
-  function getPYConnection() {
+  function getPYConnections() {
     if (pyConnection) {
       // We have a Pryv connection but no saved Tableau credentials
       if (!tableau.password) {
@@ -167,7 +167,21 @@
       });
     }
     updateUI();
-    return pyConnection;
+    return [pyConnection];
+  }
+
+
+  // Loop on connections Sync
+  function foreachConnectionSync(dof, done) {
+    var connections = getPYConnections();
+    var i = 0;
+    function loop () {
+      if (i >= connections.length) return done();
+      var connection  = connections[i];
+      i++;
+      dof(connection, loop);
+    }
+    loop();
   }
   
   function resetAuthState() {
@@ -206,7 +220,7 @@
   function onSignedIn(connection, langCode) {
     saveCredentials(null, null);
     pyConnection = connection;
-    getPYConnection();
+    getPYConnections();
   }
   
   //--- Connector setup ---//
@@ -216,7 +230,7 @@
   myConnector.init = function(initCallback) {
     tableau.authType = tableau.authTypeEnum.custom;
 
-    getPYConnection();
+    getPYConnections();
     
     if (tableau.phase == tableau.phaseEnum.interactivePhase || tableau.phase == tableau.phaseEnum.authPhase) {
       pryvAuthSetup();
@@ -268,6 +282,10 @@
     };
 
     var event_location_cols = [{
+      id: "username",
+      alias: "username",
+      dataType: tableau.dataTypeEnum.string
+    }, {
       id: "id",
       dataType: tableau.dataTypeEnum.string
     }, {
@@ -306,9 +324,13 @@
     };
 
     var stream_cols = [{
-      id: "id",
+      id: "username",
+      alias: "username",
       dataType: tableau.dataTypeEnum.string
     }, {
+      id: "id",
+      dataType: tableau.dataTypeEnum.string
+    },  {
       id: "name",
       alias: "name",
       dataType: tableau.dataTypeEnum.string
@@ -375,60 +397,76 @@
   
   // Retrieves Events from Pryv
   function getEvents(pryvFilter, postFilter, table, doneCallback) {
-    getPYConnection().events.get(pryvFilter, function (err, events) {
-      if (err) {
-        return tableau.abortWithError(JSON.stringify(err));
-      }
-      if (events == null || events.length < 1) {
-        return doneCallback();
-      }
-      if(postFilter) {
-        events = events.filter(postFilter);
-      }
-      appendEvents(table, events);
-      doneCallback();
-    });
+
+    foreachConnectionSync(function (connection, done) {
+      var username = connection.username;
+      connection.events.get(pryvFilter, function (err, events) {
+        if (err) {
+          tableau.abortWithError(JSON.stringify(err));
+          return done();
+        }
+        if (events == null || events.length < 1) {
+          return done();
+        }
+        if (postFilter) {
+          events = events.filter(postFilter);
+        }
+        appendEvents(username, table, events);
+        done();
+      });
+    }, doneCallback);
+
+
+
   }
+
+
   
   // Retrieves Streams from Pryv
   function getStreams(table, doneCallback) {
-    getPYConnection().streams.get(null, function(err, streams) {
-      if (err) {
-        return tableau.abortWithError(JSON.stringify(err));
-      }
-      if (streams == null || streams.length < 1) {
-        return doneCallback();
-      }
-      
-      var tableData = [];
-      appendStreams(tableData, streams);
-      // Fill the Table rows with Pryv data
-      table.appendRows(tableData);
-      doneCallback();
-    });
+    foreachConnectionSync(function (connection, done) {
+      var username = connection.username;
+      connection.streams.get(null, function (err, streams) {
+        if (err) {
+          tableau.abortWithError(JSON.stringify(err));
+          return done();
+        }
+        if (streams == null || streams.length < 1) {
+          return done();
+        }
+
+        var tableData = [];
+        appendStreams(username, tableData, streams);
+        // Fill the Table rows with Pryv data
+        table.appendRows(tableData);
+        done();
+      });
+    }, doneCallback);
   }
     
   // Append Pryv Streams to Tableau table
-  function appendStreams(tableD, streamsArray) {
+  function appendStreams(username, tableD, streamsArray) {
     for (var i = 0; i < streamsArray.length; i++) {
       var stream = streamsArray[i];
       tableD.push(
         {
+          username: username,
           id: stream.id,
           parentId: stream.parentId,
           name: stream.name
         }
       );
-      appendStreams(tableD, stream.children);
+      appendStreams(username, tableD, stream.children);
     }
   }
   
   // Append Pryv Events to Tableau table
-  function appendEvents(table, eventsArray) {
+  function appendEvents(username, table, eventsArray) {
     var tableData = [];
     for (var i = 0; i < eventsArray.length; i++) {
       var event = eventsArray[i];
       var eventData = {
+        username: username,
         id: event.id,
         streamId: event.streamId,
         type: event.type,

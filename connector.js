@@ -248,7 +248,30 @@
   
   // Declare the data schema to Tableau
   myConnector.getSchema = function(schemaCallback) {
+
+    var username_cols = [{
+      id: "id",
+      dataType: tableau.dataTypeEnum.string
+    },{
+      id: "username",
+      dataType: tableau.dataTypeEnum.string
+    }
+
+    ];
+
+    var usernamesTable = {
+      id: "users",
+      alias: "Users",
+      columns: username_cols
+    };
+
+
     var event_num_cols = [{
+      id: "username",
+      alias: "username",
+      dataType: tableau.dataTypeEnum.string,
+      foreignKey: {tableId: 'users', columnId: 'id'}
+    }, {
       id: "id",
       dataType: tableau.dataTypeEnum.string
     }, {
@@ -284,7 +307,8 @@
     var event_location_cols = [{
       id: "username",
       alias: "username",
-      dataType: tableau.dataTypeEnum.string
+      dataType: tableau.dataTypeEnum.string,
+      foreignKey: {tableId: 'users', columnId: 'id'}
     }, {
       id: "id",
       dataType: tableau.dataTypeEnum.string
@@ -326,7 +350,8 @@
     var stream_cols = [{
       id: "username",
       alias: "username",
-      dataType: tableau.dataTypeEnum.string
+      dataType: tableau.dataTypeEnum.string,
+      foreignKey: {tableId: 'users', columnId: 'id'}
     }, {
       id: "id",
       dataType: tableau.dataTypeEnum.string
@@ -346,7 +371,7 @@
       alias: "Streams table",
       columns: stream_cols
     };
-    schemaCallback([streamTable, eventNumTable, eventLocationTable]);
+    schemaCallback([usernamesTable, streamTable, eventNumTable, eventLocationTable]);
   };
   
   // This function actually makes the Pryv API calls, 
@@ -355,6 +380,9 @@
     // Multiple tables for WDC work by calling getData multiple times with a different id
     // so we want to make sure we are getting the correct table data per getData call
     switch (table.tableInfo.id) {
+      case 'users':
+        getUsers(table, doneCallback);
+        break;
       case 'stream':
         getStreams(table, doneCallback);
         break;
@@ -370,7 +398,15 @@
   tableau.registerConnector(myConnector);
   
   //--- Data loaders ---//
-  
+  // Retrieves Users from Pryv
+  function getUsers(table, doneCallback) {
+    foreachConnectionSync(function (connection, done) {
+        table.appendRows([{id: connection.username , username: connection.username}]);
+        done();
+      }, doneCallback);
+  }
+
+
   // Collects location Events
   function getLocationEvents(table, doneCallback) {
     var locationTypes = ['position/wgs84'];

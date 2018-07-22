@@ -48,16 +48,25 @@
 <body>
 <h1>Tableau Web Data Connector for Pryv </h1>
 <div id="authDiv">
-  Login with a Pryv account : 
-  <span id="pryv-button"></span>
+  <div id="loginDiv">
+    Login with a Pryv account :
+    <span id="pryv-button"></span>
+  </div>
+  <div id="sharingsLabelDiv">
+    <span id="sharingsLabel">Sharings.....</span>
+  </div>
   <button id="pryv-logout">Logout</button>
   <br>
 </div>
 <br>
+<hr>
 <div id="sharingDiv">
-  Or use a sharing link :
-  <input type="text" id="sharingLink"></input> 
-  <button id="useSharingLink">Use sharing</button>
+  Or use sharing links :<br>
+  <textarea id="sharingLink" cols="60" rows="5">
+    https://johann.pryv.me:443/#/sharings/cjjvsxfkz02cg0cd37bnb4vhs
+    https://perki.pryv.me:443/#/sharings/cjjvsu3lk0e070b407qnkeo99
+  </textarea><br>
+  <button id="useSharingLink">Use sharings</button>
 </div>
 <div id="submitDiv">
   <table align="center">

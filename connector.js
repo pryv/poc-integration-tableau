@@ -5,7 +5,7 @@
   var kPYSharingsUSername = "Pryv Sharings"; // constant to flag if sharings
 
   var myConnector = tableau.makeConnector();
-  var pyConnection = null;
+  var pyConnections = [];
   
   //--- Pryv auth setup ---//
   
@@ -79,7 +79,8 @@
     }
 
     settings.username = kPYSharingsUSername;
-    settings.password = [sharingLink, sharingLink].join(',');
+    // clean-up and create a coma separated list
+    settings.password = sharingLink.split(/[\s,\n]+/).filter(function(el) {return el.length != 0}).join(',');
     saveCredentials(settings.username, settings.password);
     getPYConnections();
   }
@@ -146,36 +147,38 @@
   // - Save auth/username from current Pryv connection as Tableau credentials
   // - Or open a new Pryv connection from saved Tableau credentials
   function getPYConnections() {
-    if (pyConnection) {
-      // We have a Pryv connection but no saved Tableau credentials
+    if (pyConnections.length == 1) {
+      // We have a Pryv connection but no saved Tableau credentials (Append only in oAuth Phase)
       if (!tableau.password) {
         // Saving auth/username as Tableau credentials
-        var token = pyConnection.auth;
-        var user = pyConnection.username + '.' + domain;
+        var token = pyConnections[0].auth;
+        var user = pyConnections[0].username + '.' + domain;
         saveCredentials(user, token);
       }
     }
     // We do not have a Pryv connection but saved Tableau credentials
-    else if (tableau.password) {
+    else if (pyConnections.length == 0 && tableau.password) {
 
       // if username = "Pryv Sharings";
       if (tableau.username === kPYSharingsUSername) {
         var sharingURLS = tableau.password.split(',');
-        var sharingSettings = getSettingsFromURL(sharingURLS[0]);
-        pyConnection = new pryv.Connection({
-          url: 'https://' + sharingSettings.username + '.' + sharingSettings.domain + '/',
-          auth: sharingSettings.auth
-        });
+        for (var i = 0; i < sharingURLS.length; i++ ) {
+          var sharingSettings = getSettingsFromURL(sharingURLS[i]);
+          pyConnections.push(new pryv.Connection({
+            url: 'https://' + sharingSettings.username + '.' + sharingSettings.domain + '/',
+            auth: sharingSettings.auth
+          }));
+        }
       } else {
         // Opening a new Pryv connection
-        pyConnection = new pryv.Connection({
+        pyConnections.push(new pryv.Connection({
           url: 'https://' + tableau.username + '/',
           auth: tableau.password
-        });
+        }));
       }
     }
     updateUI();
-    return [pyConnection];
+    return pyConnections;
   }
 
 
@@ -196,7 +199,7 @@
     if (tableau.phase == tableau.phaseEnum.interactivePhase || tableau.phase == tableau.phaseEnum.authPhase) {
       tableau.abortForAuth();
       saveCredentials(null, null);
-      pyConnection = null;
+      pyConnections = [];
     }
   }
   
@@ -205,10 +208,25 @@
       $('#submitDiv').show();
       $('#pryv-logout').show();
       $('#sharingDiv').hide();
+      if (tableau.username === kPYSharingsUSername) {
+        $('#loginDiv').hide();
+        $('#sharingsLabelDiv').show();
+        var sharings = tableau.password.split(',');
+        var txt = 'From ' + sharings.length + ' sharing';
+        txt += sharings.length === 1 ? ': ' : 's: '
+        txt += sharings.slice(0,5).map(function(el) {
+          return getSettingsFromURL(el).username
+        }).join(', ');
+        if (sharings.length > 6) txt += ', ...';
+        $('#sharingsLabel').html(txt);
+      }
     } else {
       $('#submitDiv').hide();
       $('#pryv-logout').hide();
+      $('#sharingsLabelDiv').hide();
       $('#sharingDiv').show();
+      $('#loginDiv').show();
+      $('#sharingsLabel').innerText = '';
     }
   }
   
@@ -227,7 +245,7 @@
   // Pryv callback triggered when the user is signed in.
   function onSignedIn(connection, langCode) {
     saveCredentials(null, null);
-    pyConnection = connection;
+    pyConnections = [connection];
     getPYConnections();
   }
   

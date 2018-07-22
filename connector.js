@@ -296,7 +296,8 @@
       id: "username",
       alias: "username",
       dataType: tableau.dataTypeEnum.string,
-      foreignKey: {tableId: 'users', columnId: 'id'}
+      foreignKey: {tableId: 'users', columnId: 'id'},
+      columnRole: tableau.columnRoleEnum.dimension
     }, {
       id: "id",
       dataType: tableau.dataTypeEnum.string
@@ -304,7 +305,8 @@
       id: "streamId",
       alias: "streamId",
       dataType: tableau.dataTypeEnum.string,
-      foreignKey: {tableId: 'stream', columnId: 'id'}
+      foreignKey: {tableId: 'stream', columnId: 'id'},
+      columnRole: tableau.columnRoleEnum.dimension
     }, {
       id: "time",
       alias: "time",
@@ -316,7 +318,8 @@
     }, {
       id: "type",
       alias: "type",
-      dataType: tableau.dataTypeEnum.string
+      dataType: tableau.dataTypeEnum.string,
+      columnRole: tableau.columnRoleEnum.dimension
     }, {
       id: "content",
       alias: "content",
@@ -334,7 +337,8 @@
       id: "username",
       alias: "username",
       dataType: tableau.dataTypeEnum.string,
-      foreignKey: {tableId: 'users', columnId: 'id'}
+      foreignKey: {tableId: 'users', columnId: 'id'},
+      columnRole: tableau.columnRoleEnum.dimension
     }, {
       id: "id",
       dataType: tableau.dataTypeEnum.string
@@ -354,7 +358,8 @@
     }, {
       id: "type",
       alias: "type",
-      dataType: tableau.dataTypeEnum.string
+      dataType: tableau.dataTypeEnum.string,
+      columnRole: tableau.columnRoleEnum.dimension
     }, {
       id: "latitude",
       alias: "latitude",
@@ -377,19 +382,22 @@
       id: "username",
       alias: "username",
       dataType: tableau.dataTypeEnum.string,
-      foreignKey: {tableId: 'users', columnId: 'id'}
+      foreignKey: {tableId: 'users', columnId: 'id'},
+      columnRole: tableau.columnRoleEnum.dimension
     }, {
       id: "id",
       dataType: tableau.dataTypeEnum.string
     },  {
       id: "name",
       alias: "name",
-      dataType: tableau.dataTypeEnum.string
+      dataType: tableau.dataTypeEnum.string,
+      columnRole: tableau.columnRoleEnum.dimension
     }, {
       id: "parentId",
       alias: "parentId",
       dataType: tableau.dataTypeEnum.string,
-      foreignKey: {tableId: 'stream', columnId: 'id'}
+      foreignKey: {tableId: 'stream', columnId: 'id'},
+      columnRole: tableau.columnRoleEnum.dimension
     }];
 
     var streamTable = {

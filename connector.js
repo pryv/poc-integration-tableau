@@ -80,7 +80,32 @@
 
     settings.username = kPYSharingsUSername;
     // clean-up and create a coma separated list
-    settings.password = sharingLink.split(/[\s,\n]+/).filter(function(el) {return el.length != 0}).join(',');
+    var sharings = sharingLink.split(/[\s,\n]+/).filter(function(el) {return el.length != 0});
+
+    var key = 'https://pryv.github.io/app-web-campaign-manager';
+    //tableau.abortWithError("a " + sharings[0].substring(0, key.length)  + " " + sharings[0].substring(0, key.length));
+    // if from cm-manager
+    if (sharings.length > 0 && sharings[0].substring(0, key.length) === key) {
+      $.ajax({
+        type: 'GET',
+        url: "https://cm.pryv.me/invitations?username=" + getParameterByName('username', sharings[0]),
+        headers: {
+          "authorization": getParameterByName('token', sharings[0]),
+        }
+      }).done(function(data) {
+        var sharings = "";
+        data.invitations.map(function (invitation) {
+          sharings += 'https://' + invitation.requestee.pryvUsername + '.pryv.me/#/sharings/'
+            + invitation.accessToken + "\n";
+        });
+        $("#sharingLink").val(sharings);
+      });
+      return;
+    }
+
+    settings.password = sharings.join(',');
+
+
     saveCredentials(settings.username, settings.password);
     getPYConnections();
   }
@@ -564,6 +589,16 @@
   // Converts Pryv timestamps to Tableau dates format
   function dateFormat(time) {
     return moment(new Date(time)).format("Y-MM-DD HH:mm:ss")
+  }
+
+  function getParameterByName(name, url) {
+    if (!url) url = window.location.href;
+    name = name.replace(/[\[\]]/g, '\\$&');
+    var regex = new RegExp('[?&]' + name + '(=([^&#]*)|&|#|$)'),
+      results = regex.exec(url);
+    if (!results) return null;
+    if (!results[2]) return '';
+    return decodeURIComponent(results[2].replace(/\+/g, ' '));
   }
   
 })();

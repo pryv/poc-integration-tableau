@@ -2,6 +2,8 @@
 // It uses version 2.x of the WDC sdk and targets Tableau 10.0 and later
 (function(){
 
+  var kPYSharingsUSername = "Pryv Sharings"; // constant to flag if sharings
+
   var myConnector = tableau.makeConnector();
   var pyConnection = null;
   
@@ -38,7 +40,7 @@
     $('#useSharingLink').click(loadPryvSharing);
     $("#submitButton").click(validateAndSubmit);
   });
-  
+
   function logout() {
     // Logout Pryv account, not applicable for connection via sharing
     if (settings.auth == null) {
@@ -69,22 +71,17 @@
       $("#limitSelector").prop('disabled', this.checked);
     });
   }
-  
+
   function loadPryvSharing() {
     var sharingLink = $('#sharingLink').val();
     if (!sharingLink) {
       return tableau.abortWithError('Please provide a sharing link.');
     }
-    var settings = getSettingsFromURL(sharingLink);
-    var domain = settings.domain;
-    var username = settings.username;
-    var auth = settings.auth;
-    if (!domain || !username || !auth) {
-      return tableau.abortWithError('This sharing link is invalid.');
-    }
-    var sharingUrl = window.location.href.split('?')[0];
-    sharingUrl += '?domain=' + domain + '&username=' + username + '&auth=' + auth;
-    window.location = sharingUrl;
+
+    settings.username = kPYSharingsUSername;
+    settings.password = [sharingLink, sharingLink].join(',');
+    saveCredentials(settings.username, settings.password);
+    getPYConnections();
   }
   
   // Validate filtering parameters and save them for next phase (data gathering)
@@ -160,11 +157,22 @@
     }
     // We do not have a Pryv connection but saved Tableau credentials
     else if (tableau.password) {
-      // Opening a new Pryv connection
-      pyConnection = new pryv.Connection({
-        url: 'https://' + tableau.username + '/',
-        auth: tableau.password
-      });
+
+      // if username = "Pryv Sharings";
+      if (tableau.username === kPYSharingsUSername) {
+        var sharingURLS = tableau.password.split(',');
+        var sharingSettings = getSettingsFromURL(sharingURLS[0]);
+        pyConnection = new pryv.Connection({
+          url: 'https://' + sharingSettings.username + '.' + sharingSettings.domain + '/',
+          auth: sharingSettings.auth
+        });
+      } else {
+        // Opening a new Pryv connection
+        pyConnection = new pryv.Connection({
+          url: 'https://' + tableau.username + '/',
+          auth: tableau.password
+        });
+      }
     }
     updateUI();
     return [pyConnection];

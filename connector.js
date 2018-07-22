@@ -434,7 +434,9 @@
   //--- Data loaders ---//
   // Retrieves Users from Pryv
   function getUsers(table, doneCallback) {
+    tableau.reportProgress("Retrieving users");
     foreachConnectionSync(function (connection, done) {
+      tableau.reportProgress("Retrieving users:" + connection.username);
         table.appendRows([{id: connection.username , username: connection.username}]);
         done();
       }, doneCallback);
@@ -467,8 +469,9 @@
   
   // Retrieves Events from Pryv
   function getEvents(pryvFilter, postFilter, table, doneCallback) {
-
+    tableau.reportProgress("Retrieving events");
     foreachConnectionSync(function (connection, done) {
+      tableau.reportProgress("Retrieving events for " + connection.username);
       var username = connection.username;
       connection.events.get(pryvFilter, function (err, events) {
         if (err) {
@@ -495,6 +498,7 @@
   // Retrieves Streams from Pryv
   function getStreams(table, doneCallback) {
     foreachConnectionSync(function (connection, done) {
+      tableau.reportProgress("Retrieving streams for " + connection.username);
       var username = connection.username;
       connection.streams.get(null, function (err, streams) {
         if (err) {

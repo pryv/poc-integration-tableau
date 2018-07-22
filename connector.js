@@ -86,6 +86,11 @@
     //tableau.abortWithError("a " + sharings[0].substring(0, key.length)  + " " + sharings[0].substring(0, key.length));
     // if from cm-manager
     if (sharings.length > 0 && sharings[0].substring(0, key.length) === key) {
+
+      /**
+       * WARNING Campaign manager is hard-coded !! CM should send the domain alognside the user
+       */
+
       $.ajax({
         type: 'GET',
         url: "https://cm.pryv.me/invitations?username=" + getParameterByName('username', sharings[0]),
@@ -95,7 +100,7 @@
       }).done(function(data) {
         var sharings = "";
         data.invitations.map(function (invitation) {
-          sharings += 'https://' + invitation.requestee.pryvUsername + '.pryv.me/#/sharings/'
+          sharings += 'https://' + invitation.requestee.pryvUsername + '.' +  domain + '/#/sharings/'
             + invitation.accessToken + "\n";
         });
         $("#sharingLink").val(sharings);
@@ -462,7 +467,8 @@
     tableau.reportProgress("Retrieving users");
     foreachConnectionSync(function (connection, done) {
       tableau.reportProgress("Retrieving users:" + connection.username);
-        table.appendRows([{id: connection.username , username: connection.username}]);
+      var u = userNameForConnection(connection);
+        table.appendRows([{id: u , username: u}]);
         done();
       }, doneCallback);
   }
@@ -497,7 +503,7 @@
     tableau.reportProgress("Retrieving events");
     foreachConnectionSync(function (connection, done) {
       tableau.reportProgress("Retrieving events for " + connection.username);
-      var username = connection.username;
+      var username = userNameForConnection(connection);
       connection.events.get(pryvFilter, function (err, events) {
         if (err) {
           tableau.abortWithError(JSON.stringify(err));
@@ -524,7 +530,7 @@
   function getStreams(table, doneCallback) {
     foreachConnectionSync(function (connection, done) {
       tableau.reportProgress("Retrieving streams for " + connection.username);
-      var username = connection.username;
+      var username = userNameForConnection(connection);
       connection.streams.get(null, function (err, streams) {
         if (err) {
           tableau.abortWithError(JSON.stringify(err));
@@ -599,6 +605,10 @@
     if (!results) return null;
     if (!results[2]) return '';
     return decodeURIComponent(results[2].replace(/\+/g, ' '));
+  }
+
+  function userNameForConnection(connection) {
+    return connection.username + '.' + connection.settings.domain;
   }
   
 })();

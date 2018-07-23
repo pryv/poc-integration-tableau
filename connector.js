@@ -100,8 +100,10 @@
       }).done(function(data) {
         var sharings = "";
         data.invitations.map(function (invitation) {
-          sharings += 'https://' + invitation.requestee.pryvUsername + '.' +  domain + '/#/sharings/'
-            + invitation.accessToken + "\n";
+          if (invitation.accessToken) { // add only if token is valid
+            sharings += 'https://' + invitation.requestee.pryvUsername + '.' + domain + '/#/sharings/'
+              + invitation.accessToken + "\n";
+          }
         });
         $("#sharingLink").val(sharings);
       });

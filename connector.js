@@ -3,6 +3,7 @@
 (function(){
 
   var kPYSharingsUsername = "Pryv Sharings"; // constant to flag if sharings
+  var campaignManagerUrl = 'https://sw.pryv.me/campaign-manager/';
 
   var myConnector = tableau.makeConnector();
   var pyConnections = [];
@@ -42,11 +43,12 @@
   });
 
   function logout() {
-    // Logout Pryv account, not applicable for connection via sharing
-    if (settings.auth == null) {
+    // Logout Pryv account, not applicable for connection via sharing    
+    if (pryv.Auth.connection != null) {
       pryv.Auth.logout();
     }
     resetAuthState();
+    updateUI();
     var urlParameters = window.location.href.split(/[?#]/);
     // If url contains parameters, clear them and reload the page
     if (urlParameters.length > 1) {
@@ -77,43 +79,43 @@
     if (!sharingLink) {
       return tableau.abortWithError('Please provide a sharing link.');
     }
-
-    settings.username = kPYSharingsUsername;
+    
     // clean-up and create a coma separated list
     var sharings = sharingLink.split(/[\s,\n]+/).filter(function(el) {return el.length != 0});
-
-    var key = 'https://pryv.github.io/app-web-campaign-manager';
-    //tableau.abortWithError("a " + sharings[0].substring(0, key.length)  + " " + sharings[0].substring(0, key.length));
-    // if from cm-manager
-    if (sharings.length > 0 && sharings[0].substring(0, key.length) === key) {
-
+    
+    // if using a campaign manager link, we need to retrieve sharings from it first
+    if (sharings.length > 0 && sharings[0].substring(0, campaignManagerUrl.length) === campaignManagerUrl) {
+      sharings = getSharingsFromCampaignManager(sharings);
+      return;
+    }
+    
+    saveCredentials(kPYSharingsUsername, sharings.join(','));
+    getPYConnections();
+    updateUI();
+  }
+  
+  function getSharingsFromCampaignManager (sharingLinks) {
+      var CMlink = sharingLinks[0];
       /**
        * WARNING Campaign manager is hard-coded !! CM should send the domain alognside the user
        */
-
       $.ajax({
         type: 'GET',
-        url: "https://cm.pryv.me/invitations?username=" + getParameterByName('username', sharings[0]),
+        url: "https://cm.pryv.me/invitations?username=" + getParameterByName('username', CMlink),
         headers: {
-          "authorization": getParameterByName('token', sharings[0]),
+          "authorization": getParameterByName('token', CMlink),
         }
       }).done(function(data) {
         var sharings = "";
         data.invitations.map(function (invitation) {
-          if (invitation.accessToken) { // add only if token is valid
+          // add only if token is valid
+          if (invitation.accessToken && invitation.status === 'accepted') {
             sharings += 'https://' + invitation.requestee.pryvUsername + '.' + domain + '/#/sharings/'
               + invitation.accessToken + "\n";
           }
         });
         $("#sharingLink").val(sharings);
       });
-      return;
-    }
-
-    settings.password = sharings.join(',');
-
-    saveCredentials(settings.username, settings.password);
-    getPYConnections();
   }
   
   // Validate filtering parameters and save them for next phase (data gathering)
@@ -240,24 +242,28 @@
       $('#sharingDiv').hide();
       if (tableau.username === kPYSharingsUsername) {
         $('#loginDiv').hide();
+        updateSharingsLabels();
         $('#sharingsLabelDiv').show();
-        var sharings = tableau.password.split(',');
-        var txt = 'From ' + sharings.length + ' sharing';
-        txt += sharings.length === 1 ? ': ' : 's: '
-        txt += sharings.slice(0,5).map(function(el) {
-          return getSettingsFromURL(el).username
-        }).join(', ');
-        if (sharings.length > 6) txt += ', ...';
-        $('#sharingsLabel').html(txt);
       }
     } else {
       $('#submitDiv').hide();
       $('#pryv-logout').hide();
       $('#sharingsLabelDiv').hide();
+      $('#sharingsLabelDiv').html('');
       $('#sharingDiv').show();
       $('#loginDiv').show();
-      $('#sharingsLabel').innerText = '';
     }
+  }
+  
+  function updateSharingsLabels () {
+    var sharings = tableau.password.split(',');
+    var txt = 'From ' + sharings.length + ' sharing';
+    txt += sharings.length === 1 ? ': ' : 's: '
+    txt += sharings.slice(0,5).map(function(el) {
+      return getSettingsFromURL(el).username
+    }).join(', ');
+    if (sharings.length > 6) txt += ', ...';
+    $('#sharingsLabelDiv').html(txt);
   }
   
   // Saving Pryv username and auth token as Tableau credentials
@@ -268,8 +274,6 @@
   
   // Pryv callback triggered when the user need to sign in.
   function onNeedSignin(popupUrl, pollUrl, pollRateMs) {
-    resetAuthState();
-    updateUI();
   }
   
   // Pryv callback triggered when the user is signed in.
@@ -521,12 +525,7 @@
         done();
       });
     }, doneCallback);
-
-
-
   }
-
-
   
   // Retrieves Streams from Pryv
   function getStreams(table, doneCallback) {

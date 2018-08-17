@@ -210,9 +210,21 @@
         }));
       }
     }
+    checkConnectionsValidity(logout);
+
     return pyConnections;
   }
 
+  function checkConnectionsValidity(fallback) {
+    pyConnections.forEach(function(connection) {
+      connection.accessInfo(function (err,res) {
+        if (err) {
+          tableau.abortWithError('Connection to Pryv is invalid (some of the sharings may be invalid)!');
+          fallback();
+        }
+      });
+    });
+  }
 
   // Loop on connections Sync
   function foreachConnectionSync(dof, done) {

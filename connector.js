@@ -2,7 +2,7 @@
 // It uses version 2.x of the WDC sdk and targets Tableau 10.0 and later
 (function(){
 
-  var kPYSharingsUSername = "Pryv Sharings"; // constant to flag if sharings
+  var kPYSharingsUsername = "Pryv Sharings"; // constant to flag if sharings
 
   var myConnector = tableau.makeConnector();
   var pyConnections = [];
@@ -78,7 +78,7 @@
       return tableau.abortWithError('Please provide a sharing link.');
     }
 
-    settings.username = kPYSharingsUSername;
+    settings.username = kPYSharingsUsername;
     // clean-up and create a coma separated list
     var sharings = sharingLink.split(/[\s,\n]+/).filter(function(el) {return el.length != 0});
 
@@ -111,7 +111,6 @@
     }
 
     settings.password = sharings.join(',');
-
 
     saveCredentials(settings.username, settings.password);
     getPYConnections();
@@ -192,7 +191,7 @@
     else if (pyConnections.length == 0 && tableau.password) {
 
       // if username = "Pryv Sharings";
-      if (tableau.username === kPYSharingsUSername) {
+      if (tableau.username === kPYSharingsUsername) {
         var sharingURLS = tableau.password.split(',');
         for (var i = 0; i < sharingURLS.length; i++ ) {
           var sharingSettings = getSettingsFromURL(sharingURLS[i]);
@@ -209,7 +208,6 @@
         }));
       }
     }
-    updateUI();
     return pyConnections;
   }
 
@@ -240,7 +238,7 @@
       $('#submitDiv').show();
       $('#pryv-logout').show();
       $('#sharingDiv').hide();
-      if (tableau.username === kPYSharingsUSername) {
+      if (tableau.username === kPYSharingsUsername) {
         $('#loginDiv').hide();
         $('#sharingsLabelDiv').show();
         var sharings = tableau.password.split(',');
@@ -279,6 +277,7 @@
     saveCredentials(null, null);
     pyConnections = [connection];
     getPYConnections();
+    updateUI();
   }
   
   //--- Connector setup ---//
@@ -289,6 +288,7 @@
     tableau.authType = tableau.authTypeEnum.custom;
 
     getPYConnections();
+    updateUI();
     
     if (tableau.phase == tableau.phaseEnum.interactivePhase || tableau.phase == tableau.phaseEnum.authPhase) {
       pryvAuthSetup();

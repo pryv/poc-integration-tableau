@@ -1,18 +1,19 @@
 // Define our custom Web Data Connector
 // It uses version 2.x of the WDC sdk and targets Tableau 10.0 and later
 (function(){
+  
+  //--- Authentication setup ---//
 
-  var kPYSharingsUsername = "Pryv Sharings"; // constant to flag if sharings
+  // Specific username used when providing multiple sharings
+  var kPYSharingsUsername = "Pryv Sharings";
+  // Campaign manager endpoint used to retrieve sharings from a campaign
   var campaignManagerUrl = 'https://sw.pryv.me/campaign-manager/';
-
-  var myConnector = tableau.makeConnector();
   var pyConnections = [];
-  
-  //--- Pryv auth setup ---//
-  
   var settings = getSettingsFromURL();
   var domain = settings.domain || 'pryv.me';
   var registerUrl = 'reg.' + domain;
+  
+  // Initialize Pryv auth settings
   var authSettings = {
     requestingAppId: 'tableau-demo',
     requestedPermissions: [
@@ -25,7 +26,7 @@
     spanButtonID: 'pryv-button',
     callbacks: {
       initialization: function () {},
-      needSignin: onNeedSignin,
+      needSignin: function () {},
       signedIn: onSignedIn,
       refused: function (reason) {},
       error: function (code, message) {}
@@ -38,12 +39,13 @@
     updateUI();
     initSelectors();
     $('#pryv-logout').click(logout);
-    $('#useSharingLink').click(loadPryvSharing);
+    $('#useSharingLink').click(loadPryvSharings);
     $("#submitButton").click(validateAndSubmit);
   });
-
+  
+  // Logout current connection(s) (from login and/or sharings)
   function logout() {
-    // Logout Pryv account, not applicable for connection via sharing    
+    // Logout Pryv account, not applicable for connection via sharings    
     if (pryv.Auth.connection != null) {
       pryv.Auth.logout();
     }
@@ -56,6 +58,7 @@
     }
   }
   
+  // Initialize date and limit selectors
   function initSelectors() {
     var currentDate = new Date();
     var currentYear = currentDate.getFullYear();
@@ -74,16 +77,19 @@
     });
   }
 
-  function loadPryvSharing() {
+  // Initialize Pryv connections from sharings
+  // Optionally retrieve the sharings from a campaign manager link
+  function loadPryvSharings() {
     var sharingLink = $('#sharingLink').val();
     if (!sharingLink) {
       return tableau.abortWithError('Please provide a sharing link.');
     }
     
-    // clean-up and create a coma separated list
+    // Clean-up and create a coma separated list
     var sharings = sharingLink.split(/[\s,\n]+/).filter(function(el) {return el.length != 0});
     
-    // if using a campaign manager link, we need to retrieve sharings from it first
+    // If using a campaign manager link, we need to retrieve sharings from it first.
+    // Then a second call to this function is required to actually load the sharings.
     if (sharings.length > 0 && sharings[0].substring(0, campaignManagerUrl.length) === campaignManagerUrl) {
       sharings = getSharingsFromCampaignManager(sharings);
       return;
@@ -94,6 +100,7 @@
     updateUI();
   }
   
+  // Specific call to retrieve sharings from a campaign manager link
   function getSharingsFromCampaignManager (sharingLinks) {
       var CMlink = sharingLinks[0];
       /**
@@ -142,12 +149,12 @@
     tableau.submit();
   }
   
+  // 
   function pryvAuthSetup() {
-    // Using custom authentication with a Pryv sharing or access token
+    // If auth settings are provided in the URL,
+    // we can just use them to create a connection to Pryv (no need to login).
     if (settings.username!=null && settings.auth!=null) {
-      // No need to show authentication buttons in this case
       $("#authDiv").hide();
-      // User already provided a Pryv access, Pryv auth not needed
       var connection = new pryv.Connection(settings);
       // Make sure that the Pryv user/token pair is valid
       connection.accessInfo(function (err,res) {
@@ -155,7 +162,7 @@
         onSignedIn(connection);
       });
     }
-    // Using standard authentication with a Pryv account
+    // Or login with a Pryv account
     else {
       pryv.Auth.config.registerURL = {host: registerUrl, 'ssl': true};
       pryv.Auth.setup(authSettings);
@@ -177,22 +184,20 @@
   }
   
   // Returns the current Pryv connection and is able to either:
-  // - Save auth/username from current Pryv connection as Tableau credentials
-  // - Or open a new Pryv connection from saved Tableau credentials
+  // - Save auth/username from current Pryv connection(s) as Tableau credentials
+  // - Or open new Pryv connection(s) from saved Tableau credentials
   function getPYConnections() {
-    if (pyConnections.length == 1) {
-      // We have a Pryv connection but no saved Tableau credentials (Append only in oAuth Phase)
-      if (!tableau.password) {
-        // Saving auth/username as Tableau credentials
-        var token = pyConnections[0].auth;
-        var user = pyConnections[0].username + '.' + domain;
-        saveCredentials(user, token);
-      }
+    // We have a Pryv connection but no saved Tableau credentials
+    if (pyConnections.length == 1 && !tableau.password) {
+      // Saving auth/username as Tableau credentials
+      var token = pyConnections[0].auth;
+      var user = pyConnections[0].username + '.' + domain;
+      saveCredentials(user, token);
     }
     // We do not have a Pryv connection but saved Tableau credentials
     else if (pyConnections.length == 0 && tableau.password) {
-
-      // if username = "Pryv Sharings";
+      // We have multiple sharings saved as Tableau credentials
+      // So multiple Pryv connections to create
       if (tableau.username === kPYSharingsUsername) {
         var sharingURLS = tableau.password.split(',');
         for (var i = 0; i < sharingURLS.length; i++ ) {
@@ -202,19 +207,25 @@
             auth: sharingSettings.auth
           }));
         }
-      } else {
-        // Opening a new Pryv connection
+      }
+      // We have a single Pryv connection to create from Tableau credentials
+      else {
         pyConnections.push(new pryv.Connection({
           url: 'https://' + tableau.username + '/',
           auth: tableau.password
         }));
       }
     }
+    
+    // Logout current connection(s) if one of them is invalid
     checkConnectionsValidity(logout);
 
     return pyConnections;
   }
 
+  // Check the validity of all current Pryv connections and call a fallback
+  // function if one of them is invalid.
+  // Invalid connections may most likely arise with invalid sharings or expired accesses.
   function checkConnectionsValidity(fallback) {
     pyConnections.forEach(function(connection) {
       connection.accessInfo(function (err,res) {
@@ -226,19 +237,20 @@
     });
   }
 
-  // Loop on connections Sync
-  function foreachConnectionSync(dof, done) {
+  // Apply function f on each current Pryv connections.
+  function foreachConnectionSync(f, done) {
     var connections = getPYConnections();
     var i = 0;
     function loop () {
       if (i >= connections.length) return done();
       var connection  = connections[i];
       i++;
-      dof(connection, loop);
+      f(connection, loop);
     }
     loop();
   }
   
+  // Reset auth state by erasing saved Tableau credentials and Pryv connections.
   function resetAuthState() {
     if (tableau.phase == tableau.phaseEnum.interactivePhase || tableau.phase == tableau.phaseEnum.authPhase) {
       tableau.abortForAuth();
@@ -247,6 +259,7 @@
     }
   }
   
+  // Adapt UI according to current auth state
   function updateUI() {
     if(tableau.password) {
       $('#submitDiv').show();
@@ -267,6 +280,7 @@
     }
   }
   
+  // Print currently loaded sharings
   function updateSharingsLabels () {
     var sharings = tableau.password.split(',');
     var txt = 'From ' + sharings.length + ' sharing';
@@ -284,10 +298,6 @@
     tableau.password = token;
   }
   
-  // Pryv callback triggered when the user need to sign in.
-  function onNeedSignin(popupUrl, pollUrl, pollRateMs) {
-  }
-  
   // Pryv callback triggered when the user is signed in.
   function onSignedIn(connection, langCode) {
     saveCredentials(null, null);
@@ -296,7 +306,9 @@
     updateUI();
   }
   
-  //--- Connector setup ---//
+  //--- Tableau connector setup ---//
+  
+  var myConnector = tableau.makeConnector();
   
   // Init function for connector, called during every phase but
   // only called when running inside the simulator or tableau
@@ -322,7 +334,8 @@
   
   // Declare the data schema to Tableau
   myConnector.getSchema = function(schemaCallback) {
-
+    
+    // Usernames table
     var username_cols = [{
       id: "id",
       dataType: tableau.dataTypeEnum.string
@@ -330,7 +343,6 @@
       id: "username",
       dataType: tableau.dataTypeEnum.string
     }
-
     ];
 
     var usernamesTable = {
@@ -339,7 +351,7 @@
       columns: username_cols
     };
 
-
+    // Numerical events table
     var event_num_cols = [{
       id: "username",
       alias: "username",
@@ -380,7 +392,8 @@
       alias: "Numerical Events",
       columns: event_num_cols
     };
-
+    
+    // Location events table
     var event_location_cols = [{
       id: "username",
       alias: "username",
@@ -425,7 +438,8 @@
       alias: "Location Events",
       columns: event_location_cols
     };
-
+    
+    // Streams table
     var stream_cols = [{
       id: "username",
       alias: "username",
@@ -453,6 +467,7 @@
       alias: "Streams table",
       columns: stream_cols
     };
+    
     schemaCallback([usernamesTable, streamTable, eventNumTable, eventLocationTable]);
   };
   
@@ -480,7 +495,8 @@
   tableau.registerConnector(myConnector);
   
   //--- Data loaders ---//
-  // Retrieves Users from Pryv
+  
+  // Retrieves Users from Pryv connections
   function getUsers(table, doneCallback) {
     tableau.reportProgress("Retrieving users");
     foreachConnectionSync(function (connection, done) {
@@ -491,15 +507,14 @@
       }, doneCallback);
   }
 
-
-  // Collects location Events
+  // Collect location Events
   function getLocationEvents(table, doneCallback) {
     var locationTypes = ['position/wgs84'];
     var pryvFilter = getPryvFilter(locationTypes);
     getEvents(pryvFilter, null, table, doneCallback);
   }
   
-  // Collects numerical Events
+  // Collect numerical Events
   function getNumEvents(table, doneCallback) {
     var pryvFilter = getPryvFilter();
     var postFilter = function (event) {
@@ -508,6 +523,8 @@
     getEvents(pryvFilter, postFilter, table, doneCallback);
   }
   
+  // Create a Pryv filter according to date and limit selectors
+  // and optionally a types parameter
   function getPryvFilter(types) {
     var filtering = JSON.parse(tableau.connectionData);
     if (types) {
@@ -609,7 +626,8 @@
   function dateFormat(time) {
     return moment(new Date(time)).format("Y-MM-DD HH:mm:ss")
   }
-
+  
+  // Extract URL parameters value by name
   function getParameterByName(name, url) {
     if (!url) url = window.location.href;
     name = name.replace(/[\[\]]/g, '\\$&');
@@ -619,7 +637,8 @@
     if (!results[2]) return '';
     return decodeURIComponent(results[2].replace(/\+/g, ' '));
   }
-
+  
+  // Compute username for provided connection (username.domain)
   function userNameForConnection(connection) {
     return connection.username + '.' + connection.settings.domain;
   }

@@ -36,7 +36,7 @@ _NOTE: Tableau refers either to [Tableau Desktop](https://www.tableau.com/produc
 
   * Use the **Sign in** button to login to your Pryv.IO account and authorize Tableau to access it.
   
-  * Use a Pryv.io sharing by pasting the sharing url in the appropriate input field and click on **Use sharing**.
+  * Use Pryv.io sharing(s) by pasting the link(s) in the appropriate input field and click on **Use sharings**.
   
   ![Login](./screenshots/login.png)
 

@@ -58,10 +58,7 @@
     }
   }
   
-<<<<<<< HEAD
-=======
   // Initialize date and limit selectors
->>>>>>> master
   function initSelectors() {
     var currentDate = new Date();
     var currentYear = currentDate.getFullYear();

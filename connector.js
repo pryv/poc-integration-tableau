@@ -7,7 +7,7 @@
   // Specific username used when providing multiple sharings
   var kPYSharingsUsername = "Pryv Sharings";
   // Campaign manager endpoint used to retrieve sharings from a campaign
-  var campaignManagerUrl = 'https://sw.pryv.me/campaign-manager/';
+  var campaignManagerUrl = 'pryvcampaign://';
   var pyConnections = [];
   var settings = getSettingsFromURL();
   var domain = settings.domain || 'pryv.me';
@@ -87,7 +87,8 @@
     
     // Clean-up and create a coma separated list
     var sharings = sharingLink.split(/[\s,\n]+/).filter(function(el) {return el.length != 0});
-    
+
+
     // If using a campaign manager link, we need to retrieve sharings from it first.
     // Then a second call to this function is required to actually load the sharings.
     if (sharings.length > 0 && sharings[0].substring(0, campaignManagerUrl.length) === campaignManagerUrl) {
@@ -99,18 +100,24 @@
     getPYConnections();
     updateUI();
   }
+
+
+
   
   // Specific call to retrieve sharings from a campaign manager link
   function getSharingsFromCampaignManager (sharingLinks) {
-      var CMlink = sharingLinks[0];
+      var CMlink = sharingLinks[0].substring(campaignManagerUrl.length);
+
+      var baseurl = CMlink.split('?')[0];
+
       /**
        * WARNING Campaign manager is hard-coded !! CM should send the domain alognside the user
        */
       $.ajax({
         type: 'GET',
-        url: "https://cm.pryv.me/invitations?username=" + getParameterByName('username', CMlink),
+        url: baseurl + '?username=' + getParameterByName('username', CMlink),
         headers: {
-          "authorization": getParameterByName('token', CMlink),
+          "authorization": getParameterByName('auth', CMlink),
         }
       }).done(function(data) {
         var sharings = "";
@@ -122,6 +129,8 @@
           }
         });
         $("#sharingLink").val(sharings);
+      }).fail(function(xhr, status, error) {
+        tableau.abortWithError(error);
       });
   }
   

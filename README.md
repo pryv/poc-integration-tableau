@@ -244,6 +244,10 @@ var postFilter = function (event) {
 
 While Pryv.IO Filters will perform the filtering on the API side, the post-filtering are applied by the connector, after the Events have been retrieved from Pryv. 
 
+## Support and warranty
+
+Pryv provides this software for educational and demonstration purposes with no support or warranty.
+
 ## License
 
 [Revised BSD license](https://github.com/pryv/documents/blob/master/license-bsd-revised.md)

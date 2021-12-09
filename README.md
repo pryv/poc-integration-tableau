@@ -1,6 +1,6 @@
-# bridge-tableau
+# Tableau integration for Pryv
 
-Tableau Web data connector ([WDC](http://tableau.github.io/webdataconnector/docs/)) implementation for Pryv.IO.
+Tableau Web data connector ([WDC](http://tableau.github.io/webdataconnector/docs/)) implementation for Pryv.io.
 
 The connector uses WDC Version 2.2 and targets Tableau 10.0 and later.
 
@@ -14,7 +14,7 @@ _NOTE: Tableau refers either to [Tableau Desktop](https://www.tableau.com/produc
 
 2. A new window opens, paste the following URL and press _Enter_ :
 
-   > https://pryv.github.io/bridge-tableau/
+   > https://pryv.github.io/poc-integration-tableau/
    
    ![Login](./screenshots/connector.png)
 
@@ -22,15 +22,15 @@ _NOTE: Tableau refers either to [Tableau Desktop](https://www.tableau.com/produc
 
    * If you already have a valid Pryv.IO access (it skips steps 4 and 5) :
 
-     > https://pryv.github.io/bridge-tableau/?username=YOURUSER&auth=YOURTOKEN
+     > https://pryv.github.io/poc-integration-tableau/?username=YOURUSER&auth=YOURTOKEN
 
    * If you want to change the Pryv.IO domain (default is _pryv.me_) :
 
-     > https://pryv.github.io/bridge-tableau/?domain=YOURDOMAIN
+     > https://pryv.github.io/poc-integration-tableau/?domain=YOURDOMAIN
 
    * Or both :
 
-     > https://pryv.github.io/bridge-tableau/?username=YOURUSER&auth=YOURTOKEN&domain=YOURDOMAIN
+     > https://pryv.github.io/poc-integration-tableau/?username=YOURUSER&auth=YOURTOKEN&domain=YOURDOMAIN
 
 4. Connect a Pryv.io account, you have two possibilities here :
 

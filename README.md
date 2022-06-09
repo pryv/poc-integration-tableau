@@ -20,24 +20,16 @@ _NOTE: Tableau refers either to [Tableau Desktop](https://www.tableau.com/produc
 
 3. _(Optional)_ You can adapt the previous URL in order to pass custom settings:
 
-   * If you already have a valid Pryv.IO access (it skips steps 4 and 5) :
+   If you want to change the Pryv.IO platform (default is _pryv.me_) :
 
-     > https://pryv.github.io/poc-integration-tableau/?username=YOURUSER&auth=YOURTOKEN
-
-   * If you want to change the Pryv.IO domain (default is _pryv.me_) :
-
-     > https://pryv.github.io/poc-integration-tableau/?domain=YOURDOMAIN
-
-   * Or both :
-
-     > https://pryv.github.io/poc-integration-tableau/?username=YOURUSER&auth=YOURTOKEN&domain=YOURDOMAIN
+   > https://pryv.github.io/poc-integration-tableau/?pryvServiceInfoUrl=https://reg.{YOURDOMAIN}/service/info
 
 4. Connect a Pryv.io account, you have two possibilities here :
 
   * Use the **Sign in** button to login to your Pryv.IO account and authorize Tableau to access it.
   
   * Use Pryv.io apiEndpoint(s) by pasting the link(s) in the appropriate input field and click on **Use apiEndpoints**.
-  
+
   ![Login](./screenshots/login.png)
 
 5. Some selectors (time range, measurements limit) appear, you can use them to filter the data to be retrieved from Pryv.IO, then click on **Get Data**.
@@ -168,7 +160,7 @@ The exact implementation of the retrieval methods will be covered in the Pryv.IO
 For Pryv.IO logic, we import our javascript library in the **index.html** :
 
 ```html
-<script type="text/javascript" src="https://api.pryv.com/lib-javascript/latest/pryv.js"></script>
+<script type="text/javascript" src="https://api.pryv.com/lib-js/latest/pryv.js"></script>
 ```
 
 It gives access to a pryv.io object that will be used for authentication/connection to Pryv.IO as well as for some utility functions.
@@ -196,26 +188,10 @@ Finally, the utility function `getSettingsFromURL` loads custom parameters that 
 
 #### Authentication
 
-As soon as the Tableau connector opens, it will start the Pryv.IO authentication flow by calling `pryvAuthSetup`. Two situations can be observed:
+As soon as the Tableau connector opens, it will start the Pryv.IO authentication flow by calling `pryv Auth Setup`. Two situations can be observed:
 
 * If the user provided an existing Pryv.IO access through the connector URL or use a apiEndpoint link (see [Usage](#usage), step 3), it will bypass Pryv login.
 * Otherwise, it will call `pryv.Auth.setup(authSettings)`, which will activate the Pryv.IO login button and start the authentication flow using the settings prepared previously.
-
-##### Phase 1: needSignin
-
-The first callback that will trigger is **needSignin**, which indicates that the user did not authorize the Tableau connector to access the Pryv account yet. In this phase, we simply reset the authentication state (`resetAuthState`, in case a previous session still exists) and tell Tableau to abort its current phase for custom authentication (`tableau.abortForAuth`).
-
-From there, the connector will just wait until the user logs in with a Pryv.IO account. On sucessful login, the user will be asked to accept the permissions requested by Tableau.
-
-##### Phase 2: signedIn
-
-Once the user accepts, an access will be granted and it will trigger **the signedIn** callback, which receives the newly opened Pryv.IO connection and shows the Pryv.IO logout button.
-
-Finally, connection to Pryv.IO is cached using  `getPYConnection` function, which serves in fact three roles:
-
-* If a Pryv.IO connection is already open, it stores the corresponding Pryv.IO credentials as Tableau credentials, so that the session persists during phases and navigation in Tableau.
-* If Tableau credentials exists but we lost the connection to Pryv:IO, it opens a new Pryv connection using the same credentials.
-* Finally, it returns the current Pryv.IO connection.
 
 #### Data gathering
 

@@ -12,7 +12,12 @@
   var pryvServiceInfoUrl =  Pryv.Browser.serviceInfoFromUrl() || 
     Pryv.Browser.CookieUtils.get('pryvServiceInfoUrl') || 
     'https://reg.pryv.me/service/info';
-  $('#serviceInfoSelectorFrom').val(pryvServiceInfoUrl);
+  
+  console.log('Loading with serviceInfoUrl', { 
+    serviceInfoUrl: pryvServiceInfoUrl, 
+    cookie:  Pryv.Browser.CookieUtils.get('pryvServiceInfoUrl'),
+    browser: Pryv.Browser.serviceInfoFromUrl()
+  });
 
   // Initialize Pryv auth settings
   var authSettings = {
@@ -45,6 +50,7 @@
   // Called when web page first loads
   // and when the Pryv auth flow returns to the page
   $(document).ready(function () {
+    $('#serviceInfoSelectorForm').val(pryvServiceInfoUrl);
     updateUI('document.ready');
     initSelectors();
     $('#pryv-logout').click(logout);
@@ -65,8 +71,13 @@
   }
 
   function loadServiceInfo() {
-    pryvServiceInfoUrl = $('#serviceInfoSelectorFrom').val();
+    pryvServiceInfoUrl = $('#serviceInfoSelectorForm').val();
     Pryv.Browser.CookieUtils.set('pryvServiceInfoUrl', pryvServiceInfoUrl);
+    var urlParameters = window.location.href.split(/[?#]/);
+    // If url contains parameters, clear them and reload the page
+    if (urlParameters.length > 1) {
+      window.location = urlParameters[0];
+    }
     pryvAuthSetup();
   }
 

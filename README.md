@@ -36,7 +36,7 @@ _NOTE: Tableau refers either to [Tableau Desktop](https://www.tableau.com/produc
 
   * Use the **Sign in** button to login to your Pryv.IO account and authorize Tableau to access it.
   
-  * Use Pryv.io sharing(s) by pasting the link(s) in the appropriate input field and click on **Use sharings**.
+  * Use Pryv.io apiEndpoint(s) by pasting the link(s) in the appropriate input field and click on **Use apiEndpoints**.
   
   ![Login](./screenshots/login.png)
 
@@ -198,7 +198,7 @@ Finally, the utility function `getSettingsFromURL` loads custom parameters that 
 
 As soon as the Tableau connector opens, it will start the Pryv.IO authentication flow by calling `pryvAuthSetup`. Two situations can be observed:
 
-* If the user provided an existing Pryv.IO access through the connector URL or use a sharing link (see [Usage](#usage), step 3), it will bypass Pryv login.
+* If the user provided an existing Pryv.IO access through the connector URL or use a apiEndpoint link (see [Usage](#usage), step 3), it will bypass Pryv login.
 * Otherwise, it will call `pryv.Auth.setup(authSettings)`, which will activate the Pryv.IO login button and start the authentication flow using the settings prepared previously.
 
 ##### Phase 1: needSignin
@@ -248,6 +248,15 @@ While Pryv.IO Filters will perform the filtering on the API side, the post-filte
 
 Pryv provides this software for educational and demonstration purposes with no support or warranty.
 
+## Dev 
+
+To develop and debug the app you may want to use the following scheme 
+ Looks at infos [Debugging tableau remotely with Chromium](https://tableau.github.io/webdataconnector/docs/wdc_debugging.html#start-tableau-with-remote-debugging-enabled-macos)
+1- Launch Tableau in debug mode with: `open /Applications/Tableau\ Public.app --args --remote-debugging-port=9000`
+2- use [rec.la](https://www.rec.la) - install in local with `npm install rec.la -g` and run `rec.la ./`
+3- From tableau open the WebData Connector pane
+4- Open `http://localhost:9000` in Chromium (you need a matching version eg 79) and select "Web data connector"
+5- In tableau Web Data Connector page use `https://l.rec.la:4443` 
 ## License
 
 [Revised BSD license](https://github.com/pryv/documents/blob/master/license-bsd-revised.md)

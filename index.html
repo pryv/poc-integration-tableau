@@ -48,19 +48,25 @@
 <body>
 <h1>Tableau Web Data Connector for Pryv </h1>
 <div id="authDiv">
+
   <div id="loginDiv">
-    Login with a Pryv account :
-    <span id="pryv-button"></span>
+    Option 1 -  Login with a Pryv account :
+    <div id="serviceInfoDiv">
+      <input id="serviceInfoSelectorFrom" type="text" value="https://reg.pryv.me/service/info" size="50"></td>
+      <button id="serviceInfoLoadButton">Load login for service info</button>
+    </div> 
+    <br>
+    <div id="pryv-button"></div>
   </div>
-  <div id="apiEndpointsLabelDiv"></div><br>
-  <button id="pryv-logout">Logout</button>
+  <br>
+  <button id="pryv-logout">Go to api endpoint selection</button>
   <br>
 </div>
 <br>
 <hr>
-<div id="apiEndpointDiv">
-  Or use apiEndpoint links :<br>
-  <textarea id="apiEndpoint" cols="60" rows="5"></textarea><br>
+<div id="apiEndpointsDiv">
+  Option 2 - Enter apiEndpoint links :<br>
+  <textarea id="apiEndpointsTextArea" cols="60" rows="5"></textarea><br>
   <button id="useApiEndpointLink">Use apiEndpoints</button>
 </div>
 <div id="submitDiv">

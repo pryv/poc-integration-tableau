@@ -9,8 +9,10 @@
   var kPYApiEndpointsUsername = "Pryv ApiEndpoints";
   // Campaign manager endpoint used to retrieve apiEndpoints from a campaign
   var campaignManagerUrl = 'pryvcampaign://';
-  var pryvServiceInfoUrl = Pryv.Browser.serviceInfoFromUrl() || 'https://reg.pryv.me/service/info';
-
+  var pryvServiceInfoUrl =  Pryv.Browser.serviceInfoFromUrl() || 
+    Pryv.Browser.CookieUtils.get('pryvServiceInfoUrl') || 
+    'https://reg.pryv.me/service/info';
+  $('#serviceInfoSelectorFrom').val(pryvServiceInfoUrl);
 
   // Initialize Pryv auth settings
   var authSettings = {
@@ -43,26 +45,29 @@
   // Called when web page first loads
   // and when the Pryv auth flow returns to the page
   $(document).ready(function () {
-    updateUI();
+    updateUI('document.ready');
     initSelectors();
     $('#pryv-logout').click(logout);
     $('#useApiEndpointLink').click(loadPryvApiEndpoints);
     $("#submitButton").click(validateAndSubmit);
+    $("#serviceInfoLoadButton").click(loadServiceInfo);
   });
 
   // Logout current connection(s) (from login and/or apiEndpoints)
   function logout() {
-    // Logout Pryv account, not applicable for connection via apiEndpoints    
-    if (pryv.Auth.connection != null) {
-      pryv.Auth.logout();
-    }
     resetAuthState();
-    updateUI();
+    updateUI('logout');
     var urlParameters = window.location.href.split(/[?#]/);
     // If url contains parameters, clear them and reload the page
     if (urlParameters.length > 1) {
       window.location = urlParameters[0];
     }
+  }
+
+  function loadServiceInfo() {
+    pryvServiceInfoUrl = $('#serviceInfoSelectorFrom').val();
+    Pryv.Browser.CookieUtils.set('pryvServiceInfoUrl', pryvServiceInfoUrl);
+    pryvAuthSetup();
   }
 
   // Initialize date and limit selectors
@@ -87,14 +92,13 @@
   // Initialize Pryv connections from apiEndpoints
   // Optionally retrieve the apiEndpoints from a campaign manager link
   function loadPryvApiEndpoints() {
-    var apiEndpoint = $('#apiEndpoint').val();
-    if (!apiEndpoint) {
+    var apiEndpointsString = $('#apiEndpointsTextArea').val();
+    if (!apiEndpointsString) {
       return tableau.abortWithError('Please provide a apiEndpoint link.');
     }
 
     // Clean-up and create a coma separated list
-    var apiEndpoints = apiEndpoint.split(/[\s,\n]+/).filter(function (el) { return el.length != 0 });
-
+    var apiEndpoints = apiEndpointsString.split(/[\s,\n]+/).filter(function (el) { return el.length != 0 });
 
     // If using a campaign manager link, we need to retrieve apiEndpoints from it first.
     // Then a second call to this function is required to actually load the apiEndpoints.
@@ -126,15 +130,14 @@
         "authorization": getParameterByName('auth', CMlink),
       }
     }).done(function (data) {
-      var apiEndpoints = "";
+      var apiEndpointsText = "";
       data.invitations.map(function (invitation) {
         // add only if token is valid
         if (invitation.accessToken && invitation.status === 'accepted') {
-          apiEndpoints += 'https://' + invitation.requestee.pryvUsername + '.' + domain + '/#/apiEndpoints/'
-            + invitation.accessToken + "\n";
+          apiEndpointsText += 'https://'  + invitation.accessToken + '@' + invitation.requestee.pryvUsername + '.' + domain + '\n';
         }
       });
-      $("#apiEndpoint").val(apiEndpoints);
+      $('#apiEndpointsTextArea').val(apiEndpointsText);
     }).fail(function (xhr, status, error) {
       tableau.abortWithError(error);
     });
@@ -202,30 +205,27 @@
 
   // Reset auth state by erasing saved Tableau credentials and Pryv connections.
   function resetAuthState() {
-    if (tableau.phase == tableau.phaseEnum.interactivePhase || tableau.phase == tableau.phaseEnum.authPhase) {
+    saveApiEndpoints(null);
+    //if (tableau.phase == tableau.phaseEnum.interactivePhase || tableau.phase == tableau.phaseEnum.authPhase) {
       tableau.abortForAuth();
-      saveApiEndpoints(null);
-      pyConnections = [];
-    }
+    //}
+    pyConnections = [];
   }
 
   // Adapt UI according to current auth state
-  function updateUI() {
+  function updateUI(from) {
+    console.log('UPDATE UI', from, tableau.password);
     if (tableau.password) {
       $('#submitDiv').show();
       $('#pryv-logout').show();
-      $('#apiEndpointDiv').hide();
+      $('#apiEndpointsDiv').hide();
       if (tableau.username === kPYApiEndpointsUsername) {
         $('#loginDiv').hide();
-       
-        $('#apiEndpointsLabelDiv').show();
       }
     } else {
       $('#submitDiv').hide();
       $('#pryv-logout').hide();
-      $('#apiEndpointsLabelDiv').hide();
-      $('#apiEndpointsLabelDiv').html('');
-      $('#apiEndpointDiv').show();
+      $('#apiEndpointsDiv').show();
       $('#loginDiv').show();
     }
   }
@@ -238,12 +238,12 @@
     } else {
       tableau.password = null;
     }
+    console.log('SAVE API ENDPOINTS', tableau.password);
   }
 
   // Pryv callback triggered when the user is signed in.
   function onSignedIn(apiEndpoint) {
-    saveApiEndpoints([apiEndpoint]);
-    updateUI();
+    $('#apiEndpointsTextArea').val(apiEndpoint);
   }
 
   //--- Tableau connector setup ---//
@@ -255,10 +255,10 @@
   myConnector.init = function (initCallback) {
     tableau.authType = tableau.authTypeEnum.custom;
 
-    updateUI();
+    updateUI('init');
 
     if (tableau.phase == tableau.phaseEnum.interactivePhase || tableau.phase == tableau.phaseEnum.authPhase) {
-      pryvAuthSetup();
+      loadServiceInfo(); // load service info from server and setup Pryv Auth
     }
 
     if (tableau.phase == tableau.phaseEnum.gatherDataPhase) {

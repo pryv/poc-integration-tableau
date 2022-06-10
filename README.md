@@ -213,8 +213,6 @@ To develop and debug the app you may want to use the following scheme
 
 3. Use `https://l.rec.la:4443` as source link
 
-   
-
 ## Support and warranty
 
 Pryv provides this software for educational and demonstration purposes with no support or warranty.

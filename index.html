@@ -6,8 +6,8 @@
   <link href="https://fonts.googleapis.com/css?family=Roboto:300" rel="stylesheet">
   <script src="https://ajax.googleapis.com/ajax/libs/jquery/1.11.1/jquery.min.js" type="text/javascript"></script>
   <script src="https://connectors.tableau.com/libs/tableauwdc-2.2.latest.js" type="text/javascript"></script>
-  <script src="http://vitalets.github.io/combodate/combodate.js" type="text/javascript"></script>
-  <script type="text/javascript" src="https://api.pryv.com/lib-javascript/latest/pryv.js"></script>
+  <script src="https://vitalets.github.io/combodate/combodate.js" type="text/javascript"></script>
+  <script type="text/javascript" src="https://api.pryv.com/lib-js/pryv.js"></script>
   <script src="https://momentjs.com/downloads/moment.min.js"></script>
   <script src="connector.js"></script>
   <style>
@@ -43,26 +43,37 @@
     #limitSelector {
       margin-right: 30px;
     }
+    #apiEndpointsCheck {
+      text-align: left;
+    }
   </style>
 </head>
 <body>
 <h1>Tableau Web Data Connector for Pryv </h1>
 <div id="authDiv">
+
   <div id="loginDiv">
-    Login with a Pryv account :
-    <span id="pryv-button"></span>
+    Option 1 -  Login with a Pryv account :
+    <div id="serviceInfoDiv">
+      <input id="serviceInfoSelectorForm" type="text" size="50"></td>
+      <button id="serviceInfoLoadButton">Refresh login for service info</button>
+    </div> 
+    <br>
+    <div id="pryv-button"></div>
   </div>
-  <div id="sharingsLabelDiv"></div><br>
-  <button id="pryv-logout">Logout</button>
   <br>
+  <button id="pryv-resetState">Go back to api endpoint selection</button>
 </div>
-<br>
 <hr>
-<div id="sharingDiv">
-  Or use sharing links :<br>
-  <textarea id="sharingLink" cols="60" rows="5"></textarea><br>
-  <button id="useSharingLink">Use sharings</button>
+<div id="apiEndpointsDiv">
+  Option 2 - Enter apiEndpoints:<br>
+  <textarea id="apiEndpointsTextArea" cols="80" rows="8"></textarea><br>
+  <button id="useApiEndpointsButton">Use these apiEndpoints in Tableau</button>
+  <br><br>
+  <button id="loadExtraApiEndpointsButton">Look for extra crendentials into these accounts</button>
 </div>
+
+
 <div id="submitDiv">
   <table align="center">
       <td>From time : </td>
@@ -83,6 +94,8 @@
   </table> 
   <br><br>
   <button id="submitButton">Get Data</button>
+  <hr>
+  <div id="apiEndpointsCheck"></div>
 </div>
 </body>
 </html>

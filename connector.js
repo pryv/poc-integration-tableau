@@ -136,7 +136,37 @@
 
     saveApiEndpoints(apiEndpoints);
     updateUI('loadPryvApiEndpoints');
+
+    // check api Enpoints
+    checkPryvApiEndpoints();
   }
+
+  // check apiEndpoints 
+  async function checkPryvApiEndpoints() {
+    var apiEndpointsCheckSpan = $('#apiEndpointsCheck');
+    apiEndpointsCheckSpan.html('');
+
+
+
+    var apiConnections = getPYConnections();
+    for (const apiConnection of apiConnections) {
+      try { 
+        const info = await apiConnection.accessInfo();
+        console.log(info);
+        addCheck(apiConnection, true, info.name || info.id);
+      } catch (e) {
+        console.log('Error checking apiEndpoint', e);
+        addCheck(apiConnection, false, e.message);
+      }
+    }
+
+    function addCheck(apiConnection, sucess, message) {
+      var line = sucess ? '✅' : '❌';
+      line += ' ' + apiConnection.apiEndpoint + ' ' + message + '<br>\n';
+      apiEndpointsCheckSpan.append(line);
+    }
+  }
+
 
   // When "Load extra apiEnpoints is clicked"
   // Check in the apiEnpoints referenced if we can find "credentials/pryv-api-endpoints"

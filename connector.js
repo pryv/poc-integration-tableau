@@ -12,9 +12,10 @@
     updateUI('document.ready');
     initTimeSelectors();
     $('#pryv-resetState').click(resetState);
-    $('#useApiEndpointLink').click(loadPryvApiEndpoints);
+    $('#useApiEndpointsButton').click(loadPryvApiEndpoints);
     $("#submitButton").click(validateAndSubmit);
     $("#serviceInfoLoadButton").click(pryvAuthSetup);
+    $("#loadExtraApiEndpointsButton").click(loadExtraPryvApiEndpoints);
   });
 
   // Adapt UI according to current auth state
@@ -133,16 +134,48 @@
     // Clean-up and create a coma separated list
     var apiEndpoints = apiEndpointsString.split(/[\s,\n]+/).filter(function (el) { return el.length != 0 });
 
-    // If using a campaign manager link, we need to retrieve apiEndpoints from it first.
-    // Then a second call to this function is required to actually load the apiEndpoints.
-    if (apiEndpoints.length > 0 && apiEndpoints[0].substring(0, campaignManagerUrl.length) === campaignManagerUrl) {
-      apiEndpoints = getApiEndpointsFromCampaignManager(apiEndpoints);
-      return;
+    saveApiEndpoints(apiEndpoints);
+    updateUI('loadPryvApiEndpoints');
+  }
+
+  // When "Load extra apiEnpoints is clicked"
+  // Check in the apiEnpoints referenced if we can find "credentials/pryv-api-endpoints"
+  async function loadExtraPryvApiEndpoints() {
+    console.log('loadExtraPryvApiEndpoints');
+    var textarea = $('#apiEndpointsTextArea');
+    var apiEndpointsString = textarea.val();
+    if (!apiEndpointsString) {
+      return tableau.abortWithError('Please provide a apiEndpoint link.');
     }
 
-    saveApiEndpoints(apiEndpoints);
-    updateUI();
+    // Clean-up and create a coma separated list
+    var apiEndpoints = apiEndpointsString.split(/[\s,\n]+/).filter(function (el) { return el.length != 0 });
+
+    function addLineToTextArea(line) {
+      textarea.val(textarea.val() + '\n' + line );
+    }
+
+    const queryAllCredentials = {
+      types: ['credentials/pryv-api-endpoint'],
+      limit: 10000
+    }
+
+    for (const apiEndpoint of apiEndpoints) {
+      var connection = new Pryv.Connection(apiEndpoint);
+      console.log('loadExtraPryvApiEndpoint for', apiEndpoint);
+      try {
+
+        var apiEndpoints = await connection.getEventsStreamed(queryAllCredentials, function (event) {
+          console.log('loadExtraPryvApiEndpoint event', event);
+          addLineToTextArea(event.content);
+        });
+      } catch (e) {
+        console.log('Error while loading extra apiEndpoints', e);
+      }
+    }
+
   }
+
 
 
   // Validate filtering parameters and save them for next phase (data gathering)
@@ -168,6 +201,7 @@
     tableau.connectionName = "Pryv WDC " + tableau.username;
     tableau.submit();
   }
+
 
   // ------------------------------  Connections and apiEndpoint Management ------------------------------ //
 
@@ -512,7 +546,7 @@
         id: event.id,
         streamId: event.streamId,
         type: event.type,
-        time: dateFormat(event.timeLT),
+        time: dateFormat(event.time * 1000),
         duration: event.duration
       };
       var content = event.content;
@@ -521,6 +555,7 @@
       } else {
         eventData.content = content;
       }
+      console.log('APPEND EVENT', eventData);
       tableData.push(eventData);
     }
     // Fill the Table rows with Pryv data

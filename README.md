@@ -30,6 +30,8 @@ _NOTE: Tableau refers either to [Tableau Desktop](https://www.tableau.com/produc
   
   * Use Pryv.io apiEndpoint(s) by pasting the link(s) in the appropriate input field and click on **Use apiEndpoints**.
 
+  * You may want to load credentials contained into events of type: `'credentials/pryv-api-endpoint'` from these accounts with "Look for extra crendentials into these accounts"
+
   ![Login](./screenshots/login.png)
 
 5. Some selectors (time range, measurements limit) appear, you can use them to filter the data to be retrieved from Pryv.IO, then click on **Get Data**.

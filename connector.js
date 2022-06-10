@@ -268,16 +268,37 @@
   }
 
   // Utility to Apply function f on each current Pryv connections.
-  function foreachConnectionSync(f, done) {
+  var connectionsChecked = false;
+  async function foreachConnectionSync(f, done) {
     var connections = getPYConnections();
     var i = 0;
+
+    if (connectionsChecked) {
+      loop();
+    } else {
+      var apiConnections = getPYConnections();
+      for (const apiConnection of apiConnections) {
+        try { 
+          const info = await apiConnection.accessInfo();
+          apiConnection.ISVALIDWITHID = info.id;
+        } catch (e) {
+          
+        }
+      }
+      connectionsChecked = true;
+      loop();
+    }
+
     function loop() {
       if (i >= connections.length) return done();
       var connection = connections[i];
       i++;
-      f(connection, loop);
+      if (connection.ISVALIDWITHID) {
+        f(connection, loop);
+      } else {
+        loop();
+      }
     }
-    loop();
   }
   
 

@@ -156,13 +156,17 @@
         addCheck(apiConnection, true, info.name || info.id);
       } catch (e) {
         console.log('Error checking apiEndpoint', e);
-        addCheck(apiConnection, false, e.message);
+        var errorMsg = e.message || e.toString() || 'Unknown error';
+        if (errorMsg.length > 47) { 
+          errorMsg = errorMsg.substring(0, 100) + '...';
+        }
+        addCheck(apiConnection, false, errorMsg);
       }
     }
 
     function addCheck(apiConnection, sucess, message) {
       var line = sucess ? '✅' : '❌';
-      line += ' ' + apiConnection.apiEndpoint + ' ' + message + '<br>\n';
+      line += ' ' + apiConnection.apiEndpoint + ' <b>' + message + '</b><br>\n';
       apiEndpointsCheckSpan.append(line);
     }
   }

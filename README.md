@@ -1,4 +1,4 @@
-# Tableau integration for Pryv
+# Tableau integration for Pryv - Proof of Concept
 
 Tableau Web data connector ([WDC](http://tableau.github.io/webdataconnector/docs/)) implementation for Pryv.io.
 
@@ -22,7 +22,7 @@ _NOTE: Tableau refers either to [Tableau Desktop](https://www.tableau.com/produc
 
    If you want to change the Pryv.IO platform (default is _pryv.me_) :
 
-   > https://pryv.github.io/poc-integration-tableau/?pryvServiceInfoUrl=https://reg.{YOURDOMAIN}/service/info
+   `https://pryv.github.io/poc-integration-tableau/?pryvServiceInfoUrl=https://reg.{YOURDOMAIN}/service/info`
 
 4. Connect a Pryv.io account, you have two possibilities here :
 
@@ -165,33 +165,13 @@ For Pryv.IO logic, we import our javascript library in the **index.html** :
 
 It gives access to a pryv.io object that will be used for authentication/connection to Pryv.IO as well as for some utility functions.
 
-We also add a login button that will allow the user to authenticate with a Pryv.IO account, as well as a logout button :
+We also add a login button that will allow the user to authenticate with a Pryv.IO account, as well as a resetState button :
 
 ```html
 <!-- It does not look like a button yet, onclick event will be affected to it later. -->
 <span id="pryv-button"></span>
-<button id="pryv-logout">Logout</button>
+<button id="pryv-resetState">resetState</button>
 ```
-
-#### Initialization
-
-In a first step, we configure some settings for Pryv.IO authentication (see [Authorize your app in API reference](http://api.pryv.com/getting-started/javascript/#authorize-your-app)):
-
-* **Domain** corresponding to the Pryv.IO platform on which the user is registered.
-* **Id** of the application (connector).
-* Array of **Permissions** to be granted to the connector, where each **Permission** indicates:
-  * **streamId**: an ids array of Pryv streams that we want to access from Tableau.
-  * **level**: the access level we will grant (read/manage/contribute).
-* A set of **callbacks** that will be called during the authentication process (see [Pryv.IO authentication](#authentication)).
-
-Finally, the utility function `getSettingsFromURL` loads custom parameters that the user may provide in the connector URL to further configure the Pryv.IO authentication (see [Usage](#usage), step 3).
-
-#### Authentication
-
-As soon as the Tableau connector opens, it will start the Pryv.IO authentication flow by calling `pryv Auth Setup`. Two situations can be observed:
-
-* If the user provided an existing Pryv.IO access through the connector URL or use a apiEndpoint link (see [Usage](#usage), step 3), it will bypass Pryv login.
-* Otherwise, it will call `pryv.Auth.setup(authSettings)`, which will activate the Pryv.IO login button and start the authentication flow using the settings prepared previously.
 
 #### Data gathering
 
@@ -220,19 +200,23 @@ var postFilter = function (event) {
 
 While Pryv.IO Filters will perform the filtering on the API side, the post-filtering are applied by the connector, after the Events have been retrieved from Pryv. 
 
+## Dev 
+
+To develop and debug the app you may want to use the following scheme 
+ Looks at options [Debugging tableau remotely with Chromium](https://tableau.github.io/webdataconnector/docs/wdc_debugging.html#start-tableau-with-remote-debugging-enabled-macos)
+
+1. use [rec.la](https://www.rec.la) - install in local with `npm install rec.la -g` and run `rec.la ./`
+
+2. From tableau or the simulator open the WebData Connector pane
+
+3. Use `https://l.rec.la:4443` as source link
+
+   
+
 ## Support and warranty
 
 Pryv provides this software for educational and demonstration purposes with no support or warranty.
 
-## Dev 
-
-To develop and debug the app you may want to use the following scheme 
- Looks at infos [Debugging tableau remotely with Chromium](https://tableau.github.io/webdataconnector/docs/wdc_debugging.html#start-tableau-with-remote-debugging-enabled-macos)
-1- Launch Tableau in debug mode with: `open /Applications/Tableau\ Public.app --args --remote-debugging-port=9000`
-2- use [rec.la](https://www.rec.la) - install in local with `npm install rec.la -g` and run `rec.la ./`
-3- From tableau open the WebData Connector pane
-4- Open `http://localhost:9000` in Chromium (you need a matching version eg 79) and select "Web data connector"
-5- In tableau Web Data Connector page use `https://l.rec.la:4443` 
 ## License
 
 [Revised BSD license](https://github.com/pryv/documents/blob/master/license-bsd-revised.md)

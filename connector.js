@@ -3,7 +3,58 @@
 // It uses version 2.x of the WDC sdk and targets Tableau 10.0 and later
 (function () {
 
-  //--- Authentication setup ---//
+  // ---------------------------------- UI AN PAGE LOAD ------------------------------------------- //
+
+  // Called when web page first loads
+  // and when the Pryv auth flow returns to the page
+  $(document).ready(function () {
+    $('#serviceInfoSelectorForm').val(pryvServiceInfoUrl);
+    updateUI('document.ready');
+    initTimeSelectors();
+    $('#pryv-resetState').click(resetState);
+    $('#useApiEndpointLink').click(loadPryvApiEndpoints);
+    $("#submitButton").click(validateAndSubmit);
+    $("#serviceInfoLoadButton").click(pryvAuthSetup);
+  });
+
+  // Adapt UI according to current auth state
+  function updateUI(from) {
+    console.log('UPDATE UI', from, tableau.password);
+    if (tableau.password) {
+      $('#submitDiv').show();
+      $('#pryv-resetState').show();
+      $('#apiEndpointsDiv').hide();
+      if (tableau.username === kPYApiEndpointsUsername) {
+        $('#loginDiv').hide();
+      }
+    } else {
+      $('#submitDiv').hide();
+      $('#pryv-resetState').hide();
+      $('#apiEndpointsDiv').show();
+      $('#loginDiv').show();
+    }
+  }
+
+  // Initialize date and limit selectors
+  function initTimeSelectors() {
+    var currentDate = new Date();
+    var currentYear = currentDate.getFullYear();
+    $("#timeSelectorFrom").combodate({
+      value: new Date(0),
+      smartDays: true,
+      maxYear: currentYear
+    });
+    $("#timeSelectorTo").combodate({
+      value: currentDate,
+      smartDays: true,
+      maxYear: currentYear
+    });
+    $("#noLimit").change(function () {
+      $("#limitSelector").prop('disabled', this.checked);
+    });
+  }
+
+  //----------------------------------- Pryv Authentication setup ----------------------------------//
 
   // Specific username used when providing multiple apiEndpoints
   var kPYApiEndpointsUsername = "Pryv ApiEndpoints";
@@ -25,7 +76,8 @@
     onStateChange: function (state) {
       console.log('##pryvAuthStateChange \t ' + JSON.stringify(state));
       if (state.id === Pryv.Browser.AuthStates.AUTHORIZED) {
-        onSignedIn(state.apiEndpoint);
+        // fill the apiEndpoints TextArea with the apiEndpoint
+        $('#apiEndpointsTextArea').val(state.apiEndpoint);
         console.log('# Auth succeeded for user ' + state.apiEndpoint);
       }
     },
@@ -41,65 +93,35 @@
       returnURL: 'self#'
     }
   };
-  // will be called during initalization
+
+  // Called at boot or when the LoadService Button is pressed
   function pryvAuthSetup() {
-    console.log(authSettings, pryvServiceInfoUrl, Pryv.utils.getQueryParamsFromURL(document.location.href));
-    Pryv.Browser.setupAuth(authSettings, pryvServiceInfoUrl);
-  }
-
-  // Called when web page first loads
-  // and when the Pryv auth flow returns to the page
-  $(document).ready(function () {
-    $('#serviceInfoSelectorForm').val(pryvServiceInfoUrl);
-    updateUI('document.ready');
-    initSelectors();
-    $('#pryv-logout').click(logout);
-    $('#useApiEndpointLink').click(loadPryvApiEndpoints);
-    $("#submitButton").click(validateAndSubmit);
-    $("#serviceInfoLoadButton").click(loadServiceInfo);
-  });
-
-  // Logout current connection(s) (from login and/or apiEndpoints)
-  function logout() {
-    resetAuthState();
-    updateUI('logout');
-    var urlParameters = window.location.href.split(/[?#]/);
-    // If url contains parameters, clear them and reload the page
-    if (urlParameters.length > 1) {
-      window.location = urlParameters[0];
-    }
-  }
-
-  function loadServiceInfo() {
     pryvServiceInfoUrl = $('#serviceInfoSelectorForm').val();
     Pryv.Browser.CookieUtils.set('pryvServiceInfoUrl', pryvServiceInfoUrl);
-    var urlParameters = window.location.href.split(/[?#]/);
-    // If url contains parameters, clear them and reload the page
-    if (urlParameters.length > 1) {
-      window.location = urlParameters[0];
-    }
-    pryvAuthSetup();
+    
+    console.log(authSettings, pryvServiceInfoUrl, Pryv.utils.getQueryParamsFromURL(document.location.href));
+    Pryv.Browser.setupAuth(authSettings, pryvServiceInfoUrl).then(function (auth) { 
+      var urlParameters = window.location.href.split(/[?#]/);
+       // If url contains parameters, clear them and reload the page
+      if (urlParameters.length > 1) {
+        window.location = urlParameters[0];
+      }
+    });
+    
   }
 
-  // Initialize date and limit selectors
-  function initSelectors() {
-    var currentDate = new Date();
-    var currentYear = currentDate.getFullYear();
-    $("#timeSelectorFrom").combodate({
-      value: new Date(0),
-      smartDays: true,
-      maxYear: currentYear
-    });
-    $("#timeSelectorTo").combodate({
-      value: currentDate,
-      smartDays: true,
-      maxYear: currentYear
-    });
-    $("#noLimit").change(function () {
-      $("#limitSelector").prop('disabled', this.checked);
-    });
+  // resetState current connection(s) (from login and/or apiEndpoints)
+  function resetState() {
+    // Reset current endPoints
+    saveApiEndpoints(null);
+    // Reset tableau auth Process
+    tableau.abortForAuth();
+    pyConnections = [];
+    updateUI('resetState');
   }
 
+  
+  // When "Use apiEndpoint is clicked"
   // Initialize Pryv connections from apiEndpoints
   // Optionally retrieve the apiEndpoints from a campaign manager link
   function loadPryvApiEndpoints() {
@@ -122,37 +144,6 @@
     updateUI();
   }
 
-
-
-
-  // Specific call to retrieve apiEndpoints from a campaign manager link
-  function getApiEndpointsFromCampaignManager(apiEndpoints) {
-    var CMlink = apiEndpoints[0].substring(campaignManagerUrl.length);
-
-    var baseurl = CMlink.split('?')[0];
-
-    /**
-     * WARNING Campaign manager is hard-coded !! CM should send the domain alognside the user
-     */
-    $.ajax({
-      type: 'GET',
-      url: baseurl + '?username=' + getParameterByName('username', CMlink),
-      headers: {
-        "authorization": getParameterByName('auth', CMlink),
-      }
-    }).done(function (data) {
-      var apiEndpointsText = "";
-      data.invitations.map(function (invitation) {
-        // add only if token is valid
-        if (invitation.accessToken && invitation.status === 'accepted') {
-          apiEndpointsText += 'https://'  + invitation.accessToken + '@' + invitation.requestee.pryvUsername + '.' + domain + '\n';
-        }
-      });
-      $('#apiEndpointsTextArea').val(apiEndpointsText);
-    }).fail(function (xhr, status, error) {
-      tableau.abortWithError(error);
-    });
-  }
 
   // Validate filtering parameters and save them for next phase (data gathering)
   // and submit to Tableau
@@ -178,11 +169,22 @@
     tableau.submit();
   }
 
-  
+  // ------------------------------  Connections and apiEndpoint Management ------------------------------ //
 
-  // Returns the current Pryv connection and is able to either:
-  // - Save auth/username from current Pryv connection(s) as Tableau credentials
-  // - Or open new Pryv connection(s) from saved Tableau credentials
+  // Saving Pryv username and auth token as Tableau credentials
+  function saveApiEndpoints(apiEndpoints) {
+    tableau.username = kPYApiEndpointsUsername;
+    if (apiEndpoints != null && apiEndpoints.length >= 1) {
+      tableau.password = apiEndpoints.join(',');
+    } else {
+      tableau.password = null;
+    }
+    console.log('SAVE API ENDPOINTS', tableau.password);
+  }
+
+
+  // Returns the current Pryv connections from tableau credentials
+  // caches them for further use
   var pyConnections = [];
   function getPYConnections() {
     // return known connections
@@ -201,7 +203,7 @@
     return pyConnections;
   }
 
-  // Apply function f on each current Pryv connections.
+  // Utility to Apply function f on each current Pryv connections.
   function foreachConnectionSync(f, done) {
     var connections = getPYConnections();
     var i = 0;
@@ -213,51 +215,9 @@
     }
     loop();
   }
+  
 
-  // Reset auth state by erasing saved Tableau credentials and Pryv connections.
-  function resetAuthState() {
-    saveApiEndpoints(null);
-    //if (tableau.phase == tableau.phaseEnum.interactivePhase || tableau.phase == tableau.phaseEnum.authPhase) {
-      tableau.abortForAuth();
-    //}
-    pyConnections = [];
-  }
-
-  // Adapt UI according to current auth state
-  function updateUI(from) {
-    console.log('UPDATE UI', from, tableau.password);
-    if (tableau.password) {
-      $('#submitDiv').show();
-      $('#pryv-logout').show();
-      $('#apiEndpointsDiv').hide();
-      if (tableau.username === kPYApiEndpointsUsername) {
-        $('#loginDiv').hide();
-      }
-    } else {
-      $('#submitDiv').hide();
-      $('#pryv-logout').hide();
-      $('#apiEndpointsDiv').show();
-      $('#loginDiv').show();
-    }
-  }
-
-  // Saving Pryv username and auth token as Tableau credentials
-  function saveApiEndpoints(apiEndpoints) {
-    tableau.username = kPYApiEndpointsUsername;
-    if (apiEndpoints != null && apiEndpoints.length >= 1) {
-      tableau.password = apiEndpoints.join(',');
-    } else {
-      tableau.password = null;
-    }
-    console.log('SAVE API ENDPOINTS', tableau.password);
-  }
-
-  // Pryv callback triggered when the user is signed in.
-  function onSignedIn(apiEndpoint) {
-    $('#apiEndpointsTextArea').val(apiEndpoint);
-  }
-
-  //--- Tableau connector setup ---//
+  //-------------------------------- Tableau connector setup ---------------------------------//
 
   var myConnector = tableau.makeConnector();
 
@@ -269,7 +229,7 @@
     updateUI('init');
 
     if (tableau.phase == tableau.phaseEnum.interactivePhase || tableau.phase == tableau.phaseEnum.authPhase) {
-      loadServiceInfo(); // load service info from server and setup Pryv Auth
+      pryvAuthSetup(); // load service info from server and setup Pryv Auth
     }
 
     if (tableau.phase == tableau.phaseEnum.gatherDataPhase) {
@@ -444,7 +404,7 @@
 
   tableau.registerConnector(myConnector);
 
-  //--- Data loaders ---//
+  //------------------------------------ Data loaders -----------------------------------//
 
   // Retrieves Users from Pryv connections
   function getUsers(table, doneCallback) {
@@ -572,17 +532,6 @@
   // Converts Pryv timestamps to Tableau dates format
   function dateFormat(time) {
     return moment(new Date(time)).format("Y-MM-DD HH:mm:ss")
-  }
-
-  // Extract URL parameters value by name
-  function getParameterByName(name, url) {
-    if (!url) url = window.location.href;
-    name = name.replace(/[\[\]]/g, '\\$&');
-    var regex = new RegExp('[?&]' + name + '(=([^&#]*)|&|#|$)'),
-      results = regex.exec(url);
-    if (!results) return null;
-    if (!results[2]) return '';
-    return decodeURIComponent(results[2].replace(/\+/g, ' '));
   }
 
   // Compute username for provided connection (username.domain)

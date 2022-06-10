@@ -499,7 +499,7 @@
   function getUsers(table, doneCallback) {
     tableau.reportProgress("Retrieving users");
     foreachConnectionSync(function (connection, done) {
-      tableau.reportProgress("Retrieving users:" + connection.username);
+      tableau.reportProgress("Retrieving users:" + connection.apiEndpoint);
       var u = userNameForConnection(connection);
       table.appendRows([{ id: u, username: u }]);
       done();
@@ -538,10 +538,13 @@
     const events = [];
     tableau.reportProgress("Retrieving events");
     foreachConnectionSync(function (connection, done) {
-      tableau.reportProgress("Retrieving events for " + connection.username);
+      tableau.reportProgress("Retrieving events for " + connection.apiEndpoint);
       var username = userNameForConnection(connection);
+      let count = 0;
       connection.getEventsStreamed(pryvFilter, function forEachEvent(event) {
         if (postFilter(event)) {
+          tableau.reportProgress("Retrieving events for " + connection.apiEndpoint + ": " + count);
+          count++;
           events.push(event);
         }
       }).then(function(res) {
@@ -556,7 +559,7 @@
   // Retrieves Streams from Pryv
   function getStreams(table, doneCallback) {
     foreachConnectionSync(function (connection, done) {
-      tableau.reportProgress("Retrieving streams for " + connection.username);
+      tableau.reportProgress("Retrieving streams for " + connection.apiEndpoint);
       var username = userNameForConnection(connection);
       var apiCalls = [{method: 'streams.get', params: {}}];
       connection.api(apiCalls).then(function (res) {

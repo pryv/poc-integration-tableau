@@ -15,7 +15,7 @@ _NOTE: Tableau refers either to [Tableau Desktop](https://www.tableau.com/produc
 2. A new window opens, paste the following URL and press _Enter_ :
 
    > https://pryv.github.io/poc-integration-tableau/
-   
+
    ![Login](./screenshots/connector.png)
 
 3. _(Optional)_ You can adapt the previous URL in order to pass custom settings:
@@ -27,7 +27,7 @@ _NOTE: Tableau refers either to [Tableau Desktop](https://www.tableau.com/produc
 4. Connect a Pryv.io account, you have two possibilities here :
 
   * Use the **Sign in** button to login to your Pryv.IO account and authorize Tableau to access it.
-  
+
   * Use Pryv.io apiEndpoint(s) by pasting the link(s) in the appropriate input field and click on **Use apiEndpoints**.
 
   * You may want to load credentials contained into events of type: `'credentials/pryv-api-endpoint'` from these accounts with "Look for extra crendentials into these accounts"
@@ -71,7 +71,7 @@ It gives access to a tableau object, which will be used to define the Tableau lo
 In **connector.js**, we first instantiate our Tableau connector :
 
 ```javascript
-var myConnector = tableau.makeConnector();
+const myConnector = tableau.makeConnector();
 ```
 
 We then define the `myConnector.init` function, which will be called at the start of every Tableau phase (see [Phase 1](#phase-1-authentication) and [Phase 2](#phase-2-data-gathering)). The main tasks of this function is to tell tableau that we want a custom authentication type  (see [Phase 1](#phase-1-authentication)) :
@@ -115,7 +115,7 @@ Firstly, we define our data schema in the `myConnector.getSchema` function, by e
 Tables are simple objects containing an id, an alias and an array of columns :
 
 ```javascript
-var streamTable = {
+const streamTable = {
 	id: "stream",
 	alias: "Streams table",
 	columns: stream_cols
@@ -194,17 +194,17 @@ Then, as for Streams, we parse the resulting Events and append them as rows of t
 Finally, retrieval of numerical Events through `getNumEvents` function follows the same steps as for location Events with the only difference that we use this time a post-filtering function to limit the resulting Events to numerical measurements:
 
 ```javascript
-var postFilter = function (event) {
+const postFilter = function (event) {
 	return (!isNaN(parseFloat(event.content))
 		&& isFinite(event.content));
 };
 ```
 
-While Pryv.IO Filters will perform the filtering on the API side, the post-filtering are applied by the connector, after the Events have been retrieved from Pryv. 
+While Pryv.IO Filters will perform the filtering on the API side, the post-filtering are applied by the connector, after the Events have been retrieved from Pryv.
 
-## Dev 
+## Dev
 
-To develop and debug the app you may want to use the following scheme 
+To develop and debug the app you may want to use the following scheme
  Looks at options [Debugging tableau remotely with Chromium](https://tableau.github.io/webdataconnector/docs/wdc_debugging.html#start-tableau-with-remote-debugging-enabled-macos)
 
 1. use [rec.la](https://www.rec.la) - install in local with `npm install rec.la -g` and run `rec.la ./`

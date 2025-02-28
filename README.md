@@ -207,18 +207,20 @@ While Pryv.IO Filters will perform the filtering on the API side, the post-filte
 To develop and debug the app you may want to use the following scheme
  Looks at options [Debugging tableau remotely with Chromium](https://tableau.github.io/webdataconnector/docs/wdc_debugging.html#start-tableau-with-remote-debugging-enabled-macos)
 
-1. use [rec.la](https://www.rec.la) - install in local with `npm install rec.la -g` and run `rec.la ./`
+1. use [backloop.dev](https://www.backloop.dev) - install in local with `npm install backloop.dev -g` and run `backloop.dev ./`
 
 2. From tableau or the simulator open the WebData Connector pane
 
-3. Use `https://l.rec.la:4443` as source link
+3. Use `https://l.backloop.dev:4443` as source link
 
 ## Support and warranty
 
 Pryv provides this software for educational and demonstration purposes with no support or warranty.
 
+Don't hesitate to contribute to this repository. The Pryv.IO user community will be grateful!
+
 ## License
 
-[Revised BSD license](https://github.com/pryv/documents/blob/master/license-bsd-revised.md)
+[BSD-3-Clause](LICENSE)
 
-Don't hesitate to contribute to this repository. The Pryv.IO user community will be grateful!
+
